@@ -11,5 +11,8 @@ build/
 .build/
 .swiftpm/
 
-# Brainstorming mockups (local only)
+# Brainstorming mockups and SDD workspaces (local only)
 .superpowers/
+
+# Claude Code worktrees
+.claude/worktrees/
