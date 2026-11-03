@@ -1,0 +1,65 @@
+import SwiftUI
+import UsageCore
+
+struct ProviderCard: View {
+    let summary: ProviderSummary
+    let store: UsageStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            if let error = visibleError {
+                ProviderErrorView(provider: summary.provider, error: error, store: store)
+            }
+            content
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var header: some View {
+        HStack(spacing: 6) {
+            Text(ProviderStyle.glyph(summary.provider))
+                .foregroundStyle(ProviderStyle.color(summary.provider))
+            Text(summary.provider.displayName).font(.headline)
+            Spacer()
+            if let plan = summary.state.snapshot?.plan {
+                Text(plan.capitalized)
+                    .font(.caption2.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.quaternary, in: Capsule())
+            }
+        }
+    }
+
+    /// Network errors with a last snapshot show no row (the footer turns orange instead).
+    private var visibleError: UsageError? {
+        guard let error = summary.state.error else { return nil }
+        if case .network = error, summary.state.snapshot != nil { return nil }
+        return error
+    }
+
+    @ViewBuilder private var content: some View {
+        if let snapshot = summary.state.snapshot {
+            if snapshot.windows.isEmpty {
+                if visibleError == nil {
+                    Text("No active limits").font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(Array(snapshot.windows.enumerated()), id: \.offset) { _, window in
+                    WindowRow(
+                        window: window,
+                        level: UsageLevel.of(window.usedPercent, thresholds: store.configuration.thresholds)
+                    )
+                }
+            }
+            if let credits = snapshot.credits, let text = Formatting.credits(credits) {
+                Text(text).font(.caption).foregroundStyle(.secondary)
+            }
+        } else if visibleError == nil {
+            ProgressView().controlSize(.small).frame(maxWidth: .infinity)
+        }
+    }
+}
