@@ -16,6 +16,8 @@ public final class UsageStore {
     @ObservationIgnored private var lastSuccessAt: [ProviderID: Date] = [:]
     @ObservationIgnored private var failures: [ProviderID: Int] = [:]
     @ObservationIgnored private var nextAttempt: [ProviderID: Date] = [:]
+    /// Not ObservationIgnored: views read `displayError`, which depends on it.
+    private var lastErrors: [ProviderID: UsageError] = [:]
 
     private static let notifiedKey = "notifiedLevels.v1"
 
@@ -47,7 +49,8 @@ public final class UsageStore {
                 let state = states[id] ?? .idle
                 let window = state.snapshot.flatMap { UsageWindow.mostConstrained(in: $0.windows) }
                 let level = window.map { UsageLevel.of($0.usedPercent, thresholds: configuration.thresholds) } ?? .normal
-                return ProviderSummary(provider: id, state: state, window: window, level: level, isStale: isStale(id))
+                return ProviderSummary(provider: id, state: state, window: window, level: level, isStale: isStale(id),
+                                       displayError: displayError(id))
             }
     }
 
@@ -55,6 +58,14 @@ public final class UsageStore {
         let all = summaries
         guard let best = UsageWindow.mostConstrained(in: all.compactMap(\.window)) else { return nil }
         return all.first { $0.window == best }
+    }
+
+    /// The error to show for `id`: the current failure, or the previous one while reloading.
+    public func displayError(_ id: ProviderID) -> UsageError? {
+        let state = states[id] ?? .idle
+        if let error = state.error { return error }
+        if case .loading = state { return lastErrors[id] }
+        return nil
     }
 
     public func isStale(_ id: ProviderID) -> Bool {
@@ -109,6 +120,7 @@ public final class UsageStore {
         switch result {
         case .failure(let error):
             states[id] = .failed(error, last: last)
+            lastErrors[id] = error
             if case .network(let retryAfter) = error {
                 let n = (failures[id] ?? 0) + 1
                 failures[id] = n
@@ -117,6 +129,7 @@ public final class UsageStore {
             }
         case .success(let snapshot):
             states[id] = .loaded(snapshot)
+            lastErrors[id] = nil
             lastSuccessAt[id] = t
             failures[id] = 0
             nextAttempt[id] = nil

@@ -24,9 +24,11 @@ public struct ProviderSummary: Sendable, Equatable, Identifiable {
     public let window: UsageWindow?
     public let level: UsageLevel
     public let isStale: Bool
+    /// The current error, or the previous one while a refresh is in flight.
+    public let displayError: UsageError?
 
     public var id: ProviderID { provider }
-    public var hasError: Bool { state.error != nil }
+    public var hasError: Bool { displayError != nil }
 }
 
 public protocol UsageNotifying: Sendable {

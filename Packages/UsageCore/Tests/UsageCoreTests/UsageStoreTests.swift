@@ -2,9 +2,21 @@ import Foundation
 import Testing
 @testable import UsageCore
 
-@MainActor @Suite struct UsageStoreTests {
+@MainActor @Suite final class UsageStoreTests {
     let clock = TestClock()
-    let defaults = UserDefaults(suiteName: UUID().uuidString)!
+    /// An absolute-path suite keeps the plist in the temp directory instead of ~/Library/Preferences.
+    let suitePath = FileManager.default.temporaryDirectory.appending(path: "llmusage-store-\(UUID().uuidString)").path
+    let defaults: UserDefaults
+
+    init() {
+        defaults = UserDefaults(suiteName: suitePath)!
+    }
+
+    // A class suite is deallocated after each test, so the throwaway plist never outlives it.
+    deinit {
+        UserDefaults(suiteName: suitePath)?.removePersistentDomain(forName: suitePath)
+        try? FileManager.default.removeItem(atPath: suitePath + ".plist")
+    }
 
     func snap(_ p: ProviderID, _ used: Double = 10, resetsAt: Date? = nil) -> UsageSnapshot {
         UsageSnapshot(
@@ -171,5 +183,27 @@ import Testing
         await store.refreshAll()
         #expect(store.overall?.provider == .claude)
         #expect(store.overall?.level == .normal)
+    }
+
+    @Test func loadingKeepsPreviousError() async {
+        let (gate, open) = StubProvider.makeGate()
+        open.yield() // lets the first fetch through; the second one blocks
+        let stub = StubProvider(id: .claude, results: [.failure(.tokenExpired), .success(snap(.claude))], gate: gate)
+        let store = makeStore([stub])
+        await store.refreshAll()
+        #expect(store.displayError(.claude) == .tokenExpired)
+        #expect(store.summaries[0].hasError)
+
+        let second = Task { @MainActor in await store.refreshAll() }
+        while await stub.fetchCount < 2 { await Task.yield() }
+        #expect(store.states[.claude] == .loading(last: nil))
+        #expect(store.summaries[0].hasError)
+        #expect(store.displayError(.claude) == .tokenExpired)
+
+        open.yield()
+        open.finish()
+        await second.value
+        #expect(store.displayError(.claude) == nil)
+        #expect(!store.summaries[0].hasError)
     }
 }
