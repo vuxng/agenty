@@ -17,7 +17,8 @@ import Testing
         -> (CodexProvider, FakeProcessRunner) {
         let runner = FakeProcessRunner(channel: channel)
         let p = CodexProvider(locator: locator(found: found), pathOverride: { nil }, runner: runner,
-                              clientVersion: "0.1.0", timeout: timeout, now: { Date(timeIntervalSince1970: 7) })
+                              clientVersion: "0.1.0", home: URL(filePath: "/Users/test"),
+                              timeout: timeout, now: { Date(timeIntervalSince1970: 7) })
         return (p, runner)
     }
 
@@ -44,7 +45,12 @@ import Testing
         #expect(ch.inputFinished)
         #expect(runner.executable?.path == Self.path)
         #expect(runner.arguments == ["app-server"])
-        #expect(runner.environment.isEmpty)
+        #expect(runner.environment.keys.sorted() == ["PATH"])
+        let path = try #require(runner.environment["PATH"])
+        #expect(path.hasPrefix("/Users/test/.local/bin:"))
+        #expect(path.contains("/opt/homebrew/bin"))
+        let entries = path.split(separator: ":").map(String.init)
+        #expect(entries.count == Set(entries).count)
         #expect(p.id == .codex)
     }
 
@@ -95,5 +101,30 @@ import Testing
             msg["method"] == .string("initialize") ? [#"{"id":1,"result":{}}"#] : [#"{"id":2,"result":{"rateLimits":null}}"#]
         }
         await #expect(throws: UsageError.notLoggedIn) { try await provider(ch).0.fetch() }
+    }
+
+    @Test func cancellationIsNetwork() async {
+        let ch = ScriptedChannel { _ in [] }
+        ch.hangsWhenEmpty = true
+        let (p, _) = provider(ch)
+        let task = Task { () -> UsageError? in
+            do throws(UsageError) { _ = try await p.fetch(); return nil } catch { return error }
+        }
+        try? await Task.sleep(for: .milliseconds(100))
+        task.cancel()
+        #expect(await task.value == .network(retryAfter: nil))
+    }
+
+    @Test func writeFailureAfterStartIsUnexpectedFormat() async {
+        let ch = ScriptedChannel { _ in [] }
+        ch.sendError = POSIXError(.EPIPE)
+        await #expect(throws: UsageError.unexpectedFormat("codex app-server exited early")) { try await provider(ch).0.fetch() }
+    }
+
+    @Test func launchFailureIsCliNotFound() async {
+        let ch = ScriptedChannel { _ in [] }
+        let (p, runner) = provider(ch)
+        runner.launchError = POSIXError(.ENOENT)
+        await #expect(throws: UsageError.cliNotFound) { try await p.fetch() }
     }
 }

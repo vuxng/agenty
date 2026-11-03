@@ -1,5 +1,6 @@
 import Foundation
 import os
+import Synchronization
 
 /// Reads plan limits from `codex app-server` (line-delimited JSON-RPC). Codex owns its own token.
 public struct CodexProvider: UsageProvider {
@@ -11,6 +12,7 @@ public struct CodexProvider: UsageProvider {
     private let pathOverride: @Sendable () -> String?
     private let runner: any ProcessRunner
     private let clientVersion: String
+    private let home: URL
     private let timeout: Duration
     private let now: @Sendable () -> Date
 
@@ -19,6 +21,7 @@ public struct CodexProvider: UsageProvider {
         pathOverride: @escaping @Sendable () -> String?,
         runner: any ProcessRunner,
         clientVersion: String,
+        home: URL = FileManager.default.homeDirectoryForCurrentUser,
         timeout: Duration = .seconds(15),
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
@@ -26,6 +29,7 @@ public struct CodexProvider: UsageProvider {
         self.pathOverride = pathOverride
         self.runner = runner
         self.clientVersion = clientVersion
+        self.home = home
         self.timeout = timeout
         self.now = now
     }
@@ -49,9 +53,12 @@ public struct CodexProvider: UsageProvider {
         let runner = self.runner
         let version = clientVersion
         let fetchedAt = now()
+        let environment = ["PATH": Self.searchPath(executable: executable, home: home)]
+        let bodyStarted = Mutex(false)
         do {
             return try await withTimeout(timeout) {
-                try await runner.run(executable: executable, arguments: ["app-server"], environment: [:]) { channel in
+                try await runner.run(executable: executable, arguments: ["app-server"], environment: environment) { channel in
+                    bodyStarted.withLock { $0 = true }
                     let rpc = JSONRPCClient(channel: channel, includesVersionField: false)
                     _ = try await rpc.call("initialize", params: .object([
                         "clientInfo": .object([
@@ -80,8 +87,24 @@ public struct CodexProvider: UsageProvider {
                 if ["auth", "login", "logged in"].contains(where: lowered.contains) { throw .notLoggedIn }
                 throw .unexpectedFormat("codex error \(code)")
             }
+        } catch is CancellationError {
+            throw .network(retryAfter: nil)
         } catch {
+            // Before the body ran this is a spawn failure; afterwards (EPIPE, output limit) the child died.
+            if bodyStarted.withLock({ $0 }) { throw .unexpectedFormat("codex app-server exited early") }
             throw .cliNotFound
         }
+    }
+
+    /// GUI apps inherit the launchd PATH, which lacks node for npm-installed codex shims.
+    static func searchPath(executable: URL, home: URL, inherited: String? = ProcessInfo.processInfo.environment["PATH"]) -> String {
+        let candidates = [
+            executable.deletingLastPathComponent().path,
+            home.appending(path: ".local/bin").path,
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+        ] + (inherited ?? "/usr/bin:/bin:/usr/sbin:/sbin").split(separator: ":").map(String.init)
+        var seen = Set<String>()
+        return candidates.filter { !$0.isEmpty && seen.insert($0).inserted }.joined(separator: ":")
     }
 }

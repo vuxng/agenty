@@ -10,6 +10,7 @@ final class ScriptedChannel: LineChannel, @unchecked Sendable {
         var sent: [JSONValue] = []
         var inputFinished = false
         var hangsWhenEmpty = false
+        var sendError: (any Error)?
     }
 
     private let state: Mutex<State>
@@ -30,10 +31,17 @@ final class ScriptedChannel: LineChannel, @unchecked Sendable {
         set { state.withLock { $0.hangsWhenEmpty = newValue } }
     }
 
+    /// When set, `send` throws this error instead of recording the line.
+    var sendError: (any Error)? {
+        get { state.withLock { $0.sendError } }
+        set { state.withLock { $0.sendError = newValue } }
+    }
+
     var sent: [JSONValue] { state.withLock { $0.sent } }
     var inputFinished: Bool { state.withLock { $0.inputFinished } }
 
     func send(_ line: String) async throws {
+        if let error = sendError { throw error }
         let value = (try? JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))) ?? .null
         let replies = responder(value)
         state.withLock {
@@ -66,6 +74,7 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
         var arguments: [String] = []
         var environment: [String: String] = [:]
         var runCount = 0
+        var launchError: (any Error)?
     }
 
     private let channel: ScriptedChannel
@@ -76,6 +85,11 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
     var executable: URL? { record.withLock { $0.executable } }
     var arguments: [String] { record.withLock { $0.arguments } }
     var environment: [String: String] { record.withLock { $0.environment } }
+    /// When set, `run` throws this error before calling the body (a spawn failure).
+    var launchError: (any Error)? {
+        get { record.withLock { $0.launchError } }
+        set { record.withLock { $0.launchError = newValue } }
+    }
     var runCount: Int { record.withLock { $0.runCount } }
 
     func run<R: Sendable>(
@@ -90,6 +104,7 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
             $0.environment = environment
             $0.runCount += 1
         }
+        if let error = launchError { throw error }
         return try await body(channel)
     }
 }
