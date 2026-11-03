@@ -3,20 +3,31 @@ import UsageCore
 
 @MainActor
 final class RefreshLoop {
+    private enum Phase { case idle, refreshing, sleeping }
+
     private let store: UsageStore
     private var loopTask: Task<Void, Never>?
     private var wakeTask: Task<Void, Never>?
+    private var phase = Phase.idle
 
     init(store: UsageStore) {
         self.store = store
     }
 
+    /// Runs a refresh in an unstructured task so cancelling the caller never reaches the provider fetches.
+    private static func shieldedRefresh(_ store: UsageStore, force: Bool) async {
+        await Task { await store.refreshAll(force: force) }.value
+    }
+
     func start() {
         stop()
         let store = store
-        loopTask = Task {
+        loopTask = Task { [weak self] in
             while !Task.isCancelled {
-                await store.refreshAll()
+                self?.phase = .refreshing
+                await Self.shieldedRefresh(store, force: false)
+                if Task.isCancelled { break }
+                self?.phase = .sleeping
                 do { try await Task.sleep(for: store.configuration.refreshInterval) } catch { break }
             }
         }
@@ -26,9 +37,15 @@ final class RefreshLoop {
                 .map { _ in () }
             for await _ in wakes {
                 Log.refresh.info("wake: forcing refresh")
-                await store.refreshAll(force: true)
+                await Self.shieldedRefresh(store, force: true)
             }
         }
+    }
+
+    /// Restarts only a sleeping loop; a refresh in flight is left alone and the next sleep reads the new interval.
+    func intervalDidChange() {
+        guard phase == .sleeping else { return }
+        start()
     }
 
     func stop() {
@@ -36,5 +53,6 @@ final class RefreshLoop {
         wakeTask?.cancel()
         loopTask = nil
         wakeTask = nil
+        phase = .idle
     }
 }

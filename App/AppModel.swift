@@ -63,8 +63,8 @@ final class AppModel {
         guard new != old else { return }
         store.configuration = new
         if new.refreshInterval != old.refreshInterval {
-            Log.app.info("refresh interval changed; restarting loop")
-            loop.start()
+            Log.app.info("refresh interval changed")
+            loop.intervalDidChange()
         }
     }
 }
