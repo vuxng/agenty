@@ -8,7 +8,7 @@ struct LLMUsageApp: App {
         MenuBarExtra {
             UsagePopover(store: model.store)
         } label: {
-            Image(systemName: "gauge.with.dots.needle.50percent")
+            MenuBarLabel(store: model.store)
         }
         .menuBarExtraStyle(.window)
     }
