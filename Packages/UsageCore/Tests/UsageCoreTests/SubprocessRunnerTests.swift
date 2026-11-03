@@ -35,4 +35,21 @@ import Testing
         }
         #expect(ContinuousClock.now - start < .seconds(5))
     }
+
+    @Test func writeToExitedChildThrowsInsteadOfSIGPIPE() async throws {
+        let threw = try await withTimeout(.seconds(5)) {
+            try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"), arguments: ["-c", "exit 0"], environment: [:]) { ch in
+                while try await ch.receive() != nil {}
+                // Give the kernel a moment to close the read end of the pipe.
+                try await Task.sleep(for: .milliseconds(100))
+                do {
+                    try await ch.send("x")
+                    return false
+                } catch {
+                    return true
+                }
+            }
+        }
+        #expect(threw)
+    }
 }

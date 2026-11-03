@@ -14,6 +14,8 @@ final class AppModel {
     @ObservationIgnored private var observer: Task<Void, Never>?
 
     init() {
+        // Writing to a closed child pipe must fail with EPIPE, never kill the app with SIGPIPE.
+        signal(SIGPIPE, SIG_IGN)
         let home = FileManager.default.homeDirectoryForCurrentUser
         let runner = SubprocessRunner()
         let locator = CLILocator(home: home, shell: ZshLoginShellLookup(runner: runner))

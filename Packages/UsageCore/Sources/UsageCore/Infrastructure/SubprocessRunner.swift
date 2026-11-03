@@ -8,12 +8,17 @@ import System
 public struct SubprocessRunner: ProcessRunner {
     public init() {}
 
+    /// A write to a pipe whose reader has gone away must fail with EPIPE instead of
+    /// killing the app with SIGPIPE. Process-wide, applied exactly once.
+    private static let ignoreSIGPIPE: Void = { signal(SIGPIPE, SIG_IGN); return }()
+
     public func run<R: Sendable>(
         executable: URL,
         arguments: [String],
         environment: [String: String],
         body: @Sendable (any LineChannel) async throws -> R
     ) async throws -> R {
+        _ = Self.ignoreSIGPIPE
         var platformOptions = PlatformOptions()
         platformOptions.teardownSequence = [.gracefulShutDown(allowedDurationToNextStep: .seconds(3))]
         var added: [Environment.Key: String?] = [:]
@@ -63,7 +68,10 @@ private final class Channel<Lines: AsyncIteratorProtocol>: LineChannel, @uncheck
     func send(_ line: String) async throws {
         Self.enter(sending, "SubprocessLineChannel.send() called concurrently")
         defer { sending.withLock { $0 = false } }
-        _ = try await writer.write(line + "\n")
+        let bytes = line + "\n"
+        let written = try await writer.write(bytes)
+        // swift-subprocess reports a zero-length write once the child has exited.
+        if written == 0 { throw POSIXError(.EPIPE) }
     }
 
     func receive() async throws -> String? {
