@@ -8,7 +8,7 @@ let package = Package(
     dependencies: [.package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "1.0.0")],
     targets: [
         .target(name: "UsageCore", dependencies: [.product(name: "Subprocess", package: "swift-subprocess")]),
-        .testTarget(name: "UsageCoreTests", dependencies: ["UsageCore"]),
+        .testTarget(name: "UsageCoreTests", dependencies: ["UsageCore"], resources: [.copy("Fixtures")]),
     ],
     swiftLanguageModes: [.v6]
 )
