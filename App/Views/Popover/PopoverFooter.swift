@@ -23,12 +23,18 @@ struct PopoverFooter: View {
                 Image(systemName: "arrow.clockwise")
             }
             .buttonStyle(.glass)
+            .accessibilityLabel(Text("Refresh"))
+            .help(Text("Refresh"))
             SettingsLink { Image(systemName: "gearshape") }
                 .buttonStyle(.glass)
+                .accessibilityLabel(Text("Settings"))
+                .help(Text("Settings"))
             Button { NSApplication.shared.terminate(nil) } label: {
                 Image(systemName: "power")
             }
             .buttonStyle(.glass)
+            .accessibilityLabel(Text("Quit LLMUsage"))
+            .help(Text("Quit LLMUsage"))
         }
     }
 }

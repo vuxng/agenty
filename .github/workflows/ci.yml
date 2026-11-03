@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check macOS version
+        id: guard
+        run: |
+          version="$(sw_vers -productVersion)"
+          major="${version%%.*}"
+          if [ "$major" -lt 27 ]; then
+            echo "::notice::Runner has macOS $version; LLMUsage needs macOS 27 or newer. Skipping build and tests."
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test UsageCore
+        if: steps.guard.outputs.supported == 'true'
+        run: swift test --package-path Packages/UsageCore
+
+      - name: Install XcodeGen
+        if: steps.guard.outputs.supported == 'true'
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        if: steps.guard.outputs.supported == 'true'
+        run: xcodegen generate
+
+      - name: Build app
+        if: steps.guard.outputs.supported == 'true'
+        run: >
+          xcodebuild -project LLMUsage.xcodeproj -scheme LLMUsage
+          -configuration Debug -destination 'platform=macOS,arch=arm64'
+          -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO
