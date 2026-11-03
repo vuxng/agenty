@@ -2,18 +2,21 @@ import AppKit
 import ServiceManagement
 import SwiftUI
 import UsageCore
+import UserNotifications
 
 struct SettingsView: View {
     let model: AppModel
 
     var body: some View {
-        SettingsForm(providers: model.store.registeredProviders, locator: model.locator)
+        SettingsForm(providers: model.store.registeredProviders, locator: model.locator, notifier: model.notifier)
     }
 }
 
 struct SettingsForm: View {
     let providers: [ProviderID]
     let locator: CLILocator
+    /// nil in previews, so no real notification center is touched.
+    var notifier: UserNotifier?
 
     @AppStorage(SettingsKey.menuBarStyle) private var menuBarStyle = MenuBarStyle.bars.rawValue
     @AppStorage(SettingsKey.refreshMinutes) private var refreshMinutes = 5
@@ -24,6 +27,7 @@ struct SettingsForm: View {
 
     @State private var loginStatus = LoginItem.status
     @State private var loginError: String?
+    @State private var notificationStatus: UNAuthorizationStatus?
 
     var body: some View {
         Form {
@@ -63,6 +67,24 @@ struct SettingsForm: View {
 
             Section("Notifications") {
                 Toggle("Notify near limits", isOn: $notificationsEnabled)
+                    .onChange(of: notificationsEnabled) { _, on in
+                        guard on, let notifier else { return }
+                        Task {
+                            await notifier.requestAuthorizationIfUndetermined()
+                            notificationStatus = await notifier.authorizationStatus()
+                        }
+                    }
+                if notificationStatus == .denied {
+                    HStack {
+                        Text("Notifications disabled in System Settings")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Open System Settings") {
+                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")!)
+                        }
+                    }
+                }
                 Stepper("Warn at \(warning)%", value: warningBinding, in: warningRange, step: 5)
                 Stepper("Critical at \(critical)%", value: criticalBinding, in: criticalRange, step: 5)
                 Toggle("Notify when limits reset", isOn: $notifyOnReset)
@@ -75,6 +97,7 @@ struct SettingsForm: View {
             NSApp.activate()
             loginStatus = LoginItem.status
         }
+        .task { notificationStatus = await notifier?.authorizationStatus() }
         .alert("Couldn't change launch at login", isPresented: loginErrorShown) {
             Button("OK") { loginError = nil }
         } message: {

@@ -1,11 +1,13 @@
 import Foundation
 import Observation
 import UsageCore
+import UserNotifications
 
 @Observable @MainActor
 final class AppModel {
     let store: UsageStore
     let locator: CLILocator
+    let notifier = UserNotifier()
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let loop: RefreshLoop
@@ -32,10 +34,12 @@ final class AppModel {
         )
 
         AppDefaults.register(in: .standard)
+        UNUserNotificationCenter.current().delegate = notifier
         self.locator = locator
         self.store = UsageStore(
             providers: [claude, codex],
-            configuration: AppDefaults.configuration(from: .standard)
+            configuration: AppDefaults.configuration(from: .standard),
+            notifier: notifier
         )
         self.loop = RefreshLoop(store: store)
         start()
@@ -43,6 +47,7 @@ final class AppModel {
 
     func start() {
         applySettings()
+        Task { [notifier] in await notifier.requestAuthorizationIfNeeded() }
         loop.start()
         observer?.cancel()
         observer = Task { [weak self] in
