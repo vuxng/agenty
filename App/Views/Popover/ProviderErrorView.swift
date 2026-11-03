@@ -45,15 +45,8 @@ struct ProviderErrorView: View {
     }
 
     @MainActor private func choosePath() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".local/bin", directoryHint: .isDirectory)
-        NSApp.activate()
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        UserDefaults.standard.set(url.path, forKey: SettingsKey.providerPath(provider))
+        guard let path = ExecutablePicker.choose() else { return }
+        UserDefaults.standard.set(path, forKey: SettingsKey.providerPath(provider))
         Task { await store.refreshAll(force: true) }
     }
 }
