@@ -22,12 +22,16 @@ public struct ClaudeProvider: UsageProvider {
     }
 
     public func fetch() async throws(UsageError) -> UsageSnapshot {
-        guard let credential = bestCredential() else { throw .notLoggedIn }
-        if let expiresAt = credential.expiresAt, expiresAt <= now() { throw .tokenExpired }
+        let (best, keychainDenied) = bestCredential()
+        guard let credential = best else { throw keychainDenied ? .keychainDenied : .notLoggedIn }
+        if let expiresAt = credential.expiresAt, expiresAt <= now() {
+            throw keychainDenied ? .keychainDenied : .tokenExpired
+        }
 
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "GET"
         request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         request.setValue("Bearer \(credential.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -66,15 +70,19 @@ public struct ClaudeProvider: UsageProvider {
     }
 
     /// Largest `expiresAt` wins, `nil` sorts lowest, ties keep the earlier source.
-    private func bestCredential() -> ClaudeCredential? {
+    /// Also reports whether any source was refused Keychain access.
+    private func bestCredential() -> (credential: ClaudeCredential?, keychainDenied: Bool) {
         var best: ClaudeCredential?
+        var keychainDenied = false
         for source in sources {
             let loaded: ClaudeCredential?
             do {
                 loaded = try source.load()
             } catch let error as CredentialSourceError {
                 switch error {
-                case let .accessDenied(status): Self.log.error("claude credential source denied, OSStatus \(status, privacy: .public)")
+                case let .accessDenied(status):
+                    if KeychainAccessGate.isDenial(status) { keychainDenied = true }
+                    Self.log.error("claude credential source denied, OSStatus \(status, privacy: .public)")
                 case .unreadable: Self.log.error("claude credential source unreadable")
                 }
                 continue
@@ -86,7 +94,7 @@ public struct ClaudeProvider: UsageProvider {
             guard let current = best else { best = candidate; continue }
             if (candidate.expiresAt ?? .distantPast) > (current.expiresAt ?? .distantPast) { best = candidate }
         }
-        return best
+        return (best, keychainDenied)
     }
 
     /// Only a non-negative integer number of seconds is honoured; HTTP-dates are ignored.

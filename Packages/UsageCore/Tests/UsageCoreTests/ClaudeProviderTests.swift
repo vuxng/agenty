@@ -40,6 +40,7 @@ import Testing
         #expect(r.httpMethod == "GET")
         #expect(r.value(forHTTPHeaderField: "anthropic-beta") == "oauth-2025-04-20")
         #expect(r.timeoutInterval == 15)
+        #expect(r.cachePolicy == .reloadIgnoringLocalAndRemoteCacheData)
     }
 
     @Test func mapsFixtureToSnapshot() async throws {
@@ -120,8 +121,55 @@ import Testing
         #expect(http.requests[0].value(forHTTPHeaderField: "Authorization") == "Bearer fresh")
     }
 
+    @Test func deniedKeychainWithStaleFileIsKeychainDenied() async {
+        let http = FakeHTTPClient(status: 200)
+        let p = provider([ThrowingCredentialSource(.accessDenied(-128)), StaticCredentialSource(stale)], http)
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+        #expect(http.requests.isEmpty)
+    }
+
+    @Test func deniedKeychainWithNoFileIsKeychainDenied() async {
+        let p = provider([ThrowingCredentialSource(.accessDenied(-25293)), StaticCredentialSource(nil)], FakeHTTPClient(status: 200))
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+    }
+
+    @Test func nonDenialAccessErrorIsStillNotLoggedIn() async {
+        let p = provider([ThrowingCredentialSource(.accessDenied(-25300))], FakeHTTPClient(status: 200))
+        await #expect(throws: UsageError.notLoggedIn) { try await p.fetch() }
+    }
+
+    @Test func deniedKeychainSkipsKeychainForSession() async {
+        let gate = KeychainAccessGate()
+        let source = GatedCountingSource(gate: gate)
+        let p = provider([source, StaticCredentialSource(stale)], FakeHTTPClient(status: 200))
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+        #expect(source.keychainCalls == 1)
+        #expect(gate.isDenied)
+        gate.reset()
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+        #expect(source.keychainCalls == 2)
+    }
+
+    @Test func deniedGateShortCircuitsRealKeychainSource() {
+        let gate = KeychainAccessGate()
+        gate.markDenied()
+        // The gate is checked before any Keychain call, so this never touches the Keychain.
+        #expect(throws: CredentialSourceError.accessDenied(errSecUserCanceled)) {
+            try KeychainCredentialSource(gate: gate).load()
+        }
+    }
+
+    @Test func gateStatusClassification() {
+        #expect(KeychainAccessGate.isDenial(-128))
+        #expect(KeychainAccessGate.isDenial(-25293))
+        #expect(KeychainAccessGate.isDenial(-25308))
+        #expect(!KeychainAccessGate.isDenial(-25300))
+    }
+
     @Test func allSourcesThrowingIsNotLoggedIn() async {
-        let p = provider([ThrowingCredentialSource(.accessDenied(-128)), ThrowingCredentialSource(.unreadable)], FakeHTTPClient(status: 200))
+        let p = provider([ThrowingCredentialSource(.accessDenied(-25300)), ThrowingCredentialSource(.unreadable)], FakeHTTPClient(status: 200))
         await #expect(throws: UsageError.notLoggedIn) { try await p.fetch() }
     }
 
