@@ -22,7 +22,8 @@ tuần, theo model) và khi nào reset.
 ## 2. Phạm vi
 
 ### Trong v1
-- Provider: **Claude**, **Codex**.
+- Provider: **Claude**, **Codex**, **Grok**. Grok là phần làm sau cùng và chỉ bắt đầu khi đã
+  có fixture thật (§5.4). Nếu chưa có thì v1 vẫn release với Claude + Codex.
 - Menu bar với 3 kiểu hiển thị (chọn trong Settings).
 - Popover chi tiết.
 - Thông báo vượt ngưỡng + thông báo reset.
@@ -30,8 +31,9 @@ tuần, theo model) và khi nào reset.
 - Settings cơ bản.
 
 ### Ngoài v1 (để v2+)
-- **Grok** — chờ spike (§9.1). Kiến trúc chừa sẵn chỗ (`UsageProvider`).
 - Lịch sử / biểu đồ xu hướng.
+- Dùng "reset credit" của Codex (`account/rateLimitResetCredit/consume`), usage credits /
+  extra usage của Claude, auto top-up của Grok.
 - Widget.
 - Nhiều tài khoản cho cùng một provider.
 - Thống kê token / quy đổi chi phí.
@@ -64,7 +66,7 @@ llm-usage/
 └── Packages/UsageCore/         Swift Package local, KHÔNG import SwiftUI
     ├── Sources/UsageCore/
     │   ├── Models/             ProviderID, UsageWindow, UsageSnapshot, UsageError, Credits
-    │   ├── Providers/          ClaudeProvider, CodexProvider
+    │   ├── Providers/          ClaudeProvider, CodexProvider, GrokProvider
     │   ├── Infrastructure/     HTTPClient, ProcessRunner, CLILocator, KeychainReader
     │   ├── Alerts/             UsageEvent, evaluate(old:new:thresholds:)
     │   └── UsageStore.swift
@@ -79,7 +81,8 @@ public enum ProviderID: String, Sendable, CaseIterable { case claude, codex, gro
 public enum WindowKind: Sendable, Hashable {
     case session5h
     case weekly
-    case weeklyModel(String)        // ví dụ "opus"
+    case weeklyModel(String)        // ví dụ "Opus", "Fable" (display_name từ server)
+    case billingPeriod              // Grok: credit theo kỳ thanh toán (tháng)
     case other(minutes: Int)        // cửa sổ không nhận diện được
 }
 
@@ -151,8 +154,10 @@ Trigger (timer / mở popover / ⟳ / wake)
 2. File `~/.claude/.credentials.json`.
 
 Cả hai có dạng `{"claudeAiOauth": {accessToken, refreshToken, expiresAt, refreshTokenExpiresAt, scopes, subscriptionType, rateLimitTier}}`.
-App đọc cả hai và dùng bản có `expiresAt` muộn hơn. Lần đầu đọc Keychain, macOS sẽ hỏi
+App đọc cả hai và dùng bản có `expiresAt` muộn hơn. Lần đầu đọc Keychain, macOS có thể hỏi
 quyền; người dùng chọn "Always Allow".
+*Spike:* trên máy thật, file đã hết hạn từ ~28 ngày trước, còn Keychain là bản Claude Code
+đang refresh. Thực tế **Keychain là nguồn chính**, file là fallback.
 
 **Request:**
 ```
@@ -161,12 +166,30 @@ Authorization: Bearer <accessToken>
 anthropic-beta: oauth-2025-04-20
 ```
 
-**Ánh xạ** (chốt chính xác sau spike §9.2):
-dùng **allowlist** — `five_hour` → `.session5h`, `seven_day` → `.weekly`,
-`seven_day_opus` → `.weeklyModel("opus")`, `seven_day_sonnet` (nếu có) → `.weeklyModel("sonnet")`.
-Các key `seven_day_*` khác (ví dụ `seven_day_oauth_apps`, `seven_day_overage_included`,
-`seven_day_cowork`) **không** phải model nên bị bỏ qua trong v1. Spike §9.2 sẽ xác định
-nghĩa của chúng. Field `null` thì bỏ qua. `subscriptionType` → `plan`.
+**Ánh xạ** (đã chốt qua spike §9.2, xem `docs/superpowers/spikes/2026-11-04-claude-codex-spike.md`):
+
+*Nguồn chính:* mảng `limits[]`. Phân loại theo `kind`, không bao giờ theo label:
+| `kind` | `WindowKind` | % | reset |
+|---|---|---|---|
+| `session` | `.session5h` | `percent` | `resets_at` (ISO 8601, có phần lẻ giây) |
+| `weekly_all` | `.weekly` | `percent` | `resets_at` |
+| `weekly_scoped` | `.weeklyModel(scope.model.display_name)` | `percent` | `resets_at` |
+| kind khác | bỏ qua (log tên kind) | | |
+
+Row có `is_active == false` thì bỏ qua.
+
+*Fallback* (chỉ dùng khi response không có `limits`): `five_hour` → `.session5h`,
+`seven_day` → `.weekly`, `seven_day_opus` → `.weeklyModel("Opus")`,
+`seven_day_sonnet` → `.weeklyModel("Sonnet")`, đọc `{utilization, resets_at}`. Field `null`
+thì bỏ qua.
+
+Parser **lỏng**: response có rất nhiều key tên mã nội bộ (`iguana_necktie`, `amber_*`…), nên
+gặp key lạ thì bỏ qua, không fail. Chỉ báo `unexpectedFormat` khi không có cả `limits` lẫn
+`seven_day`.
+
+**Không được giả định luôn có cửa sổ 5 giờ.** Lúc spike, response không có row `session`.
+
+`subscriptionType` (trong credential) → `plan`.
 
 **Token hết hạn:** **app không tự refresh token.** Lý do: refresh token có thể bị xoay vòng
 (rotation), app refresh có thể làm Claude Code bị đăng xuất.
@@ -177,10 +200,16 @@ nghĩa của chúng. Field `null` thì bỏ qua. `subscriptionType` → `plan`.
 
 **Cách lấy:** chạy `codex app-server` qua `swift-subprocess`, giao tiếp JSON-RPC (mỗi dòng
 một JSON) trên stdio:
-1. `initialize` (clientInfo: `LLMUsage`, version) → chờ response.
+1. `initialize` với `clientInfo: {name: "llmusage", title: "LLMUsage", version}` → chờ response `id`.
 2. Gửi notification `initialized`.
-3. `account/rateLimits/read` → `GetAccountRateLimitsResponse`.
-4. Đóng stdin rồi terminate process. Timeout toàn bộ: **15 giây**.
+3. `account/rateLimits/read` với `params: {excludeResetCreditDetails: true}` (cờ dành cho
+   background poll) → `GetAccountRateLimitsResponse`.
+4. Đóng stdin. Process tự thoát; quá 3 giây chưa thoát thì terminate. Timeout toàn bộ: **15 giây**.
+
+Message **không** có trường `"jsonrpc"`, mỗi message một dòng. Server gửi notification
+(`account/updated`, `remoteControl/status/changed`…) **xen giữa và trước** response. Client
+chỉ khớp response theo `id` và bỏ qua mọi message có `method`. Spike đo được ~1,3 giây cho
+toàn bộ quá trình.
 
 Token do Codex tự quản lý và tự refresh. App không đọc `~/.codex/auth.json`.
 
@@ -200,14 +229,43 @@ trị khác ngoài `codex`.
 
 App GUI không thừa hưởng PATH của shell. Thứ tự tìm:
 1. Đường dẫn người dùng tự chỉ định trong Settings.
-2. Các thư mục quen thuộc: `~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`.
+2. Các thư mục quen thuộc: `~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `~/.grok/bin`.
 3. `/bin/zsh -lc 'command -v <name>'`, chạy một lần mỗi phiên app rồi cache.
 
 Không tìm thấy → `.cliNotFound`.
 
-### 5.4 Grok
+### 5.4 Grok — `GrokProvider`
 
-Không có trong v1. Xem spike §9.1.
+Kết quả spike §9.1: `docs/superpowers/spikes/2026-11-04-grok-usage-spike.md`.
+
+**Cách lấy:** cùng mẫu với Codex. Spawn `grok agent --no-leader stdio` với biến môi trường
+`GROK_DISABLE_AUTOUPDATER=1`, để mỗi lần poll không kích hoạt tự cập nhật binary. Giao tiếp
+ACP JSON-RPC qua stdio:
+1. `initialize` với `{"protocolVersion": 1, "clientCapabilities": {}}`. Không cần `session/new`,
+   và **không bao giờ gửi prompt**.
+2. Gọi `_x.ai/billing` với `{}`. Bắt buộc có dấu `_` ở đầu; `x.ai/billing` sẽ trả về `-32601`.
+3. Đóng stdin. Timeout 15 giây.
+
+Agent tự gọi `GET https://cli-chat-proxy.grok.com/v1/billing?format=credits` và tự lo auth.
+App **không** đọc `~/.grok/auth.json` và **không** gọi HTTP trực tiếp.
+
+**Ánh xạ** (tên field lấy từ binary; kiểu dữ liệu và cách lồng nhau **chờ fixture thật**):
+`creditUsagePercent` → `UsageWindow(kind: .billingPeriod, usedPercent:, resetsAt: billingPeriodEnd)`.
+`prepaidBalance` / `onDemand*` → `Credits` (nếu có).
+
+**Lỗi:** `-32000 "Authentication required"` → `.notLoggedIn` ("Run `grok login`");
+`-32601` → `.unexpectedFormat("billing method missing")`.
+
+**Lưu ý vận hành:**
+- Khi token và refresh token đều đã chết, chính `grok` sẽ **tự xoá `~/.grok/auth.json`**.
+  Điều này xảy ra ở lần chạy đầu tiên, bất kể ai chạy. App phải hiện `.notLoggedIn` rõ ràng,
+  không được thử lại liên tục.
+- Dữ liệu là credit theo tháng nên chu kỳ poll của Grok **tối thiểu 5 phút**, kể cả khi
+  Settings đặt ngắn hơn.
+
+**Điều kiện để bắt đầu implement:** người dùng chạy `grok login`, sau đó chạy lại script
+spike để lưu `docs/superpowers/spikes/fixtures/grok-usage.json` (đã xoá dữ liệu cá nhân)
+và chốt phần ánh xạ ở trên.
 
 ## 6. UI
 
@@ -235,8 +293,8 @@ Không có trong v1. Xem spike §9.1.
 ### 6.3 Settings (một `Form`)
 1. **Chung:** Launch at login (`SMAppService.mainApp`); chu kỳ refresh 1 / 2 / **5** / 10 / 15 phút.
 2. **Menu bar:** kiểu hiển thị C / A / B.
-3. **Providers:** bật/tắt Claude, Codex. Codex có ô đường dẫn CLI kèm trạng thái
-   ("✓ Tìm thấy tại …" / "✗ Không tìm thấy").
+3. **Providers:** bật/tắt Claude, Codex, Grok. Codex và Grok có ô đường dẫn CLI kèm trạng
+   thái ("✓ Tìm thấy tại …" / "✗ Không tìm thấy").
 4. **Thông báo:** bật/tắt; ngưỡng 1 (mặc định 80) và ngưỡng 2 (mặc định 95); bật/tắt báo reset.
 
 Lưu bằng `@AppStorage` / `UserDefaults`.
@@ -292,8 +350,11 @@ Tiếng Anh làm gốc, thêm tiếng Việt qua String Catalog (`Localizable.xc
   - `CredentialSource` (Keychain / file)
   - `Clock` để test refresh, backoff và stale.
 - Các test bắt buộc:
-  - Parse fixture Claude và Codex (lấy từ spike §9.2, đã xoá dữ liệu cá nhân) ra
-    `UsageSnapshot` đúng.
+  - Parse fixture Claude và Codex (`docs/superpowers/spikes/fixtures/*.json`, sẽ copy vào
+    `Tests/UsageCoreTests/Fixtures/`) ra `UsageSnapshot` đúng. Claude cần thêm các biến thể:
+    có row `session`; `is_active: false`; chỉ có field cũ (không có `limits`); kind lạ;
+    key tên mã lạ.
+  - Codex JSON-RPC: có notification xen trước response, và các message không có `"jsonrpc"`.
   - Ánh xạ `windowDurationMins` → `WindowKind`, gồm cả `primary = weekly, secondary = nil`.
   - Bảng lỗi: 401 → `tokenExpired`, `expiresAt` đã qua → `tokenExpired` (không gọi mạng),
     429 có `Retry-After`, JSON hỏng → `unexpectedFormat`.
@@ -308,7 +369,9 @@ Tiếng Anh làm gốc, thêm tiếng Việt qua String Catalog (`Localizable.xc
 
 ## 9. Spike (làm trước khi lập plan)
 
-### 9.1 Grok — nguồn dữ liệu "Usage limit"
+### 9.1 Grok — nguồn dữ liệu "Usage limit" ✅ Đã tìm ra cơ chế (còn thiếu fixture thật)
+Kết quả: `docs/superpowers/spikes/2026-11-04-grok-usage-spike.md`; §5.4 đã được cập nhật.
+
 - **Câu hỏi:** có cách đọc hạn mức SuperGrok (giống tab Usage limit trong `/usage` của
   `grok` 1.0.x) một cách ổn định từ ngoài TUI không?
 - **Thử theo thứ tự rẻ nhất:**
@@ -319,7 +382,9 @@ Tiếng Anh làm gốc, thêm tiếng Việt qua String Catalog (`Localizable.xc
   Code thử thì bỏ.
 - **Timebox:** 1–2 giờ.
 
-### 9.2 Claude + Codex — xác nhận format thật
+### 9.2 Claude + Codex — xác nhận format thật ✅ Đã xong
+Kết quả: `docs/superpowers/spikes/2026-11-04-claude-codex-spike.md`; §5.1 và §5.2 đã được cập nhật.
+
 - Gọi `/api/oauth/usage` và `account/rateLimits/read` bằng script ngắn trên máy thật.
 - Ghi lại response, xoá dữ liệu cá nhân (id, email, account id), lưu thành fixture JSON
   cho §8.
@@ -345,5 +410,6 @@ Tiếng Anh làm gốc, thêm tiếng Việt qua String Catalog (`Localizable.xc
 | Endpoint Claude thay đổi hoặc bị chặn | Mất dữ liệu Claude | `unexpectedFormat` rõ ràng; parse lỏng (bỏ qua field lạ); fixture test |
 | `codex app-server` (experimental) đổi protocol | Mất dữ liệu Codex | Pin theo schema đã sinh; fallback v2: đọc `rate_limits` trong session log |
 | Keychain prompt gây phiền | UX lần đầu | Có fallback file; giải thích trong onboarding/README |
-| Không có cách lấy dữ liệu Grok | Thiếu 1/3 provider | Spike §9.1; v1 không phụ thuộc Grok |
+| Method `_x.ai/billing` của Grok (nội bộ, không có tài liệu) bị đổi tên hoặc gỡ | Mất dữ liệu Grok | `-32601` → `unexpectedFormat` rõ ràng; dự phòng: gọi HTTP `/v1/billing` (không khuyến nghị) |
+| Spawn `grok` kích hoạt tự cập nhật, hoặc xoá credential đã chết | Tải xuống bất ngờ; Grok bị đăng xuất | `GROK_DISABLE_AUTOUPDATER=1`; hiện `.notLoggedIn` rõ ràng, không retry dồn dập |
 | Runner CI chưa có macOS 27 | CI chỉ chạy được một phần | `swift test` vẫn chạy nếu toolchain hỗ trợ; build app ở local |
