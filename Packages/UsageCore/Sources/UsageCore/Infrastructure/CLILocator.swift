@@ -53,7 +53,8 @@ public actor CLILocator {
     private let home: URL
     private let probe: any ExecutableProbe
     private let shell: any LoginShellLookup
-    private var cache: [String: URL?] = [:]
+    /// Only the (slow) login-shell lookup is cached, misses included; known directories are re-probed every call.
+    private var shellCache: [String: String?] = [:]
 
     public init(home: URL, probe: any ExecutableProbe = FileManagerProbe(), shell: any LoginShellLookup) {
         self.home = home
@@ -67,11 +68,7 @@ public actor CLILocator {
         if let override = expandedOverride(override), probe.isExecutable(atPath: override) {
             return URL(filePath: override)
         }
-        if let cached = cache[name] { return cached }
-
-        let resolved = await resolve(name)
-        cache[name] = .some(resolved)
-        return resolved
+        return await resolve(name)
     }
 
     private func expandedOverride(_ override: String?) -> String? {
@@ -93,7 +90,13 @@ public actor CLILocator {
             let candidate = directory + "/" + name
             if probe.isExecutable(atPath: candidate) { return URL(filePath: candidate) }
         }
-        if let path = await shell.commandPath(for: name) { return URL(filePath: path) }
-        return nil
+        let shellPath: String?
+        if let cached = shellCache[name] {
+            shellPath = cached
+        } else {
+            shellPath = await shell.commandPath(for: name)
+            shellCache[name] = .some(shellPath)
+        }
+        return shellPath.map { URL(filePath: $0) }
     }
 }

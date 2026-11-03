@@ -68,6 +68,16 @@ struct CLILocatorTests {
         #expect(await shell.calls == 1)
     }
 
+    @Test func knownDirIsReprobedEachCall() async {
+        let probe = MutableProbe()
+        let shell = FakeShell(result: nil)
+        let l = CLILocator(home: home, probe: probe, shell: shell)
+        #expect(await l.locate("codex", override: nil) == nil)
+        probe.add("/opt/homebrew/bin/codex")
+        #expect(await l.locate("codex", override: nil)?.path == "/opt/homebrew/bin/codex")
+        #expect(await shell.calls == 1)
+    }
+
     @Test func rejectsUnsafeNames() async {
         let shell = FakeShell(result: "/custom/codex")
         let l = locator(shell: shell)
