@@ -1,0 +1,32 @@
+name: LLMUsage
+options:
+  deploymentTarget:
+    macOS: "27.0"
+packages:
+  UsageCore:
+    path: Packages/UsageCore
+targets:
+  LLMUsage:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: UsageCore
+    info:
+      path: App/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: LLMUsage
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.vuxng.LLMUsage
+        ARCHS: arm64
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        SWIFT_EMIT_LOC_STRINGS: YES

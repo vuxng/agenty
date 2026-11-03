@@ -16,3 +16,6 @@ build/
 
 # Claude Code worktrees
 .claude/worktrees/
+
+# XcodeGen output
+LLMUsage.xcodeproj/

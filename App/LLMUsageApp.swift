@@ -1,0 +1,15 @@
+import SwiftUI
+
+@main
+struct LLMUsageApp: App {
+    @State private var model = AppModel()
+
+    var body: some Scene {
+        MenuBarExtra {
+            UsagePopover(store: model.store)
+        } label: {
+            Image(systemName: "gauge.with.dots.needle.50percent")
+        }
+        .menuBarExtraStyle(.window)
+    }
+}
