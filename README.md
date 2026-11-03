@@ -6,7 +6,7 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 
 ## Features
 
-- Menu-bar glyph in three styles (bars, rings, or one per provider) so you can see at a glance whether a limit is close.
+- Menu-bar glyph in three styles (bars, a single ring, or one per provider) so you can see at a glance whether a limit is close.
 - Popover with every window, its percentage and its reset time.
 - Notifications at 80% and 95% (configurable) and when a limit resets.
 - Launch at login and a configurable refresh interval.
@@ -41,9 +41,15 @@ LLMUsage relies on endpoints and methods that are not public, documented APIs: `
 
 The first time LLMUsage reads Claude Code's credentials from the Keychain, macOS asks for permission. Choose **Always Allow** so it does not ask again.
 
+"Always Allow" is remembered per app signature. Every new release build is ad-hoc signed, so macOS may ask again after you update. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry**.
+
 ## Install
 
-Download the zip from the Releases page, unzip it and move `LLMUsage.app` to Applications. The app is ad-hoc signed, not notarized, so on first launch right-click it and choose Open.
+Download the zip from the Releases page, unzip it and move `LLMUsage.app` to Applications. The app is ad-hoc signed, not notarized, so macOS Gatekeeper blocks the first launch. On macOS 15 and later, right-click → Open no longer bypasses it. Instead, try to open the app once, then go to System Settings › Privacy & Security and click **Open Anyway**. Or remove the quarantine flag from a terminal:
+
+```sh
+xattr -dr com.apple.quarantine /path/to/LLMUsage.app
+```
 
 ## Build from source
 
@@ -55,6 +61,13 @@ Run the core tests with:
 
 ```sh
 swift test --package-path Packages/UsageCore
+```
+
+After changing UI strings, regenerate the String Catalog entries and add a Vietnamese (`vi`) translation, state `translated`, for every new key. Build first, then sync from the build's `.stringsdata` files:
+
+```sh
+xcrun xcstringstool sync App/Resources/Localizable.xcstrings \
+  --stringsdata build/DerivedData/Build/Intermediates.noindex/LLMUsage.build/Debug/LLMUsage.build/Objects-normal/arm64/*.stringsdata
 ```
 
 Build a release zip with `scripts/build-release.sh <version>`; the result is in `build/`.
