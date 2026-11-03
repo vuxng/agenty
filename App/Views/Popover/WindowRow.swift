@@ -4,7 +4,6 @@ import UsageCore
 struct WindowRow: View {
     let window: UsageWindow
     let level: UsageLevel
-    var now: Date = .now
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -13,9 +12,11 @@ struct WindowRow: View {
                     .font(.subheadline.weight(.medium))
                 Spacer()
                 if let resetsAt = window.resetsAt {
-                    Text(Formatting.reset(.make(resetsAt: resetsAt, now: now), now: now))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    TimelineView(.everyMinute) { context in
+                        Text(Formatting.reset(.make(resetsAt: resetsAt, now: context.date), now: context.date))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             ProgressBar(fraction: window.fraction, color: level.color ?? .primary)

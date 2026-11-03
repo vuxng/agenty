@@ -4,12 +4,13 @@ import UsageCore
 struct ProviderCard: View {
     let summary: ProviderSummary
     let store: UsageStore
+    var onRetryKeychain: @MainActor () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
             if let error = visibleError {
-                ProviderErrorView(provider: summary.provider, error: error, store: store)
+                ProviderErrorView(provider: summary.provider, error: error, store: store, onRetryKeychain: onRetryKeychain)
             }
             content
         }
@@ -24,6 +25,9 @@ struct ProviderCard: View {
                 .foregroundStyle(ProviderStyle.color(summary.provider))
             Text(summary.provider.displayName).font(.headline)
             Spacer()
+            if case .loading = summary.state, visibleError != nil {
+                ProgressView().controlSize(.mini)
+            }
             if let plan = summary.state.snapshot?.plan {
                 Text(plan.capitalized)
                     .font(.caption2.weight(.medium))
@@ -36,7 +40,7 @@ struct ProviderCard: View {
 
     /// Network errors with a last snapshot show no row (the footer turns orange instead).
     private var visibleError: UsageError? {
-        guard let error = summary.state.error else { return nil }
+        guard let error = summary.displayError else { return nil }
         if case .network = error, summary.state.snapshot != nil { return nil }
         return error
     }

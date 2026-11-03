@@ -6,6 +6,7 @@ struct ProviderErrorView: View {
     let provider: ProviderID
     let error: UsageError
     let store: UsageStore
+    var onRetryKeychain: @MainActor () -> Void = {}
 
     var body: some View {
         HStack(spacing: 8) {
@@ -15,6 +16,8 @@ struct ProviderErrorView: View {
             switch error {
             case .cliNotFound:
                 Button("Choose path…", action: choosePath).controlSize(.small)
+            case .keychainDenied:
+                Button("Retry", action: onRetryKeychain).controlSize(.small)
             case .unexpectedFormat:
                 Button("Report issue") {
                     if let url = URL(string: "https://github.com/vuxng/llm-usage/issues/new") {
@@ -38,6 +41,7 @@ struct ProviderErrorView: View {
             case .grok: return "Not signed in — run `grok login`"
             }
         case .tokenExpired: return "Session expired — open Claude Code once"
+        case .keychainDenied: return "Keychain access denied — allow LLMUsage to read “Claude Code-credentials”"
         case .cliNotFound: return "\(name) CLI not found"
         case .network: return "Can't reach \(name) — will retry"
         case .unexpectedFormat: return "API format changed"

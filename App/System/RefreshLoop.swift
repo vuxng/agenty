@@ -36,6 +36,8 @@ final class RefreshLoop {
                 .notifications(named: NSWorkspace.didWakeNotification)
                 .map { _ in () }
             for await _ in wakes {
+                // Give the network a few seconds to come back; stop() cancels this sleep.
+                do { try await Task.sleep(for: .seconds(5)) } catch { break }
                 Log.refresh.info("wake: forcing refresh")
                 await Self.shieldedRefresh(store, force: true)
             }

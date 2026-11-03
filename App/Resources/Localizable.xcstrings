@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ %lld%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$lld%%"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$lld%%"
+          }
+        }
+      }
+    },
     "%@ CLI not found" : {
       "localizations" : {
         "vi" : {
@@ -239,6 +255,36 @@
         }
       }
     },
+    "Keychain access denied — allow LLMUsage to read “Claude Code-credentials”" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quyền truy cập Keychain bị từ chối — hãy cho phép LLMUsage đọc “Claude Code-credentials”"
+          }
+        }
+      }
+    },
+    "LLMUsage: %@" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLMUsage: %@"
+          }
+        }
+      }
+    },
+    "LLMUsage: no data" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LLMUsage: chưa có dữ liệu"
+          }
+        }
+      }
+    },
     "Launch at login" : {
       "localizations" : {
         "vi" : {
@@ -425,6 +471,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Báo lỗi"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thử lại"
           }
         }
       }

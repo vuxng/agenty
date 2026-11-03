@@ -6,7 +6,7 @@ struct LLMUsageApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            UsagePopover(store: model.store)
+            UsagePopover(store: model.store, onRetryKeychain: model.retryKeychainAccess)
         } label: {
             MenuBarLabel(store: model.store)
         }

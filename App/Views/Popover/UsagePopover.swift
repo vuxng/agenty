@@ -3,6 +3,7 @@ import UsageCore
 
 struct UsagePopover: View {
     let store: UsageStore
+    var onRetryKeychain: @MainActor () -> Void = {}
 
     var body: some View {
         let summaries = store.summaries
@@ -11,7 +12,7 @@ struct UsagePopover: View {
                 ContentUnavailableView("No providers enabled", systemImage: "gauge")
             } else {
                 ForEach(summaries) { summary in
-                    ProviderCard(summary: summary, store: store)
+                    ProviderCard(summary: summary, store: store, onRetryKeychain: onRetryKeychain)
                 }
             }
             PopoverFooter(store: store, isStale: summaries.contains(where: \.isStale))

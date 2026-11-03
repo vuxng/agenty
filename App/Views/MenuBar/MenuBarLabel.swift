@@ -14,6 +14,18 @@ struct MenuBarLabel: View {
             overall: store.overall,
             colorScheme: colorScheme
         ))
+        .accessibilityLabel(Text(accessibilitySummary))
+    }
+
+    /// For example "LLMUsage: Claude 62%, Codex 23%".
+    private var accessibilitySummary: String {
+        let parts = store.summaries.compactMap { summary -> String? in
+            guard let window = summary.window else { return nil }
+            let percent = Int(window.usedPercent.rounded())
+            return String(localized: "\(summary.provider.displayName) \(percent)%")
+        }
+        guard !parts.isEmpty else { return String(localized: "LLMUsage: no data") }
+        return String(localized: "LLMUsage: \(parts.joined(separator: ", "))")
     }
 }
 
