@@ -41,7 +41,7 @@ LLMUsage relies on endpoints and methods that are not public, documented APIs: `
 
 The first time LLMUsage reads Claude Code's credentials from the Keychain, macOS asks for permission. Choose **Always Allow** so it does not ask again.
 
-"Always Allow" is remembered per app signature. Every new release build is ad-hoc signed, so macOS may ask again after you update. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry**.
+"Always Allow" is remembered per app signature. Every new release build is ad-hoc signed, so macOS may ask again after you update. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry** or relaunch the app.
 
 ## Install
 

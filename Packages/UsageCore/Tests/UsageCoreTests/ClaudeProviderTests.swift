@@ -155,9 +155,10 @@ import Testing
     @Test func deniedGateShortCircuitsRealKeychainSource() {
         let gate = KeychainAccessGate()
         gate.markDenied()
-        // The gate is checked before any Keychain call, so this never touches the Keychain.
+        // The gate is checked before any Keychain call. The bogus service keeps this test away from
+        // the user's real "Claude Code-credentials" item even if that check ever regresses.
         #expect(throws: CredentialSourceError.accessDenied(errSecUserCanceled)) {
-            try KeychainCredentialSource(gate: gate).load()
+            try KeychainCredentialSource(service: "io.github.vuxng.LLMUsage.tests.nonexistent", gate: gate).load()
         }
     }
 
