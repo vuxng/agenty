@@ -52,6 +52,13 @@ import Testing
         #expect(s.credits == nil)
     }
 
+    @Test func max20xTierReportsUltraPlan() async throws {
+        let ultra = ClaudeCredential(accessToken: "fresh", expiresAt: now + 3600, subscriptionType: "max",
+                                     rateLimitTier: "default_claude_max_20x")
+        let s = try await provider([StaticCredentialSource(ultra)], try okHTTP()).fetch()
+        #expect(s.plan == "ultra")
+    }
+
     @Test func noCredentialsIsNotLoggedIn() async {
         let http = FakeHTTPClient(status: 200)
         let p = provider([StaticCredentialSource(nil)], http)
