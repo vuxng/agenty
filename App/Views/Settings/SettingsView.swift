@@ -35,7 +35,7 @@ struct SettingsForm: View {
                 Toggle("Launch at login", isOn: launchAtLogin)
                 if loginStatus == .requiresApproval {
                     HStack {
-                        Text("Approve LLMUsage in System Settings › Login Items")
+                        Text("Approve Agenty in System Settings › Login Items")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -59,7 +59,7 @@ struct SettingsForm: View {
             Section("Providers") {
                 ForEach(providers, id: \.self) { provider in
                     ProviderToggle(provider: provider)
-                    if provider == .codex || provider == .grok {
+                    if provider == .codex {
                         ProviderPathRow(provider: provider, locator: locator)
                     }
                 }

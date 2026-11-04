@@ -3,7 +3,7 @@ import os
 
 /// Maps the `/api/oauth/usage` response to usage windows.
 public enum ClaudeUsageParser {
-    private static let log = Logger(subsystem: "io.github.vuxng.LLMUsage", category: "claude")
+    private static let log = Logger(subsystem: "io.github.vuxng.Agenty", category: "claude")
 
     private static let legacyFields: [(key: String, kind: WindowKind)] = [
         ("five_hour", .session5h),

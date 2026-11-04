@@ -1,4 +1,4 @@
-name: LLMUsage
+name: Agenty
 options:
   developmentLanguage: en
   knownRegions: [en, vi, Base]
@@ -8,7 +8,7 @@ packages:
   UsageCore:
     path: Packages/UsageCore
 targets:
-  LLMUsage:
+  Agenty:
     type: application
     platform: macOS
     sources: [App]
@@ -18,12 +18,12 @@ targets:
       path: App/Info.plist
       properties:
         LSUIElement: true
-        CFBundleDisplayName: LLMUsage
+        CFBundleDisplayName: Agenty
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.vuxng.LLMUsage
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.vuxng.Agenty
         ARCHS: arm64
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete

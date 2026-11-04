@@ -33,8 +33,8 @@ struct PopoverFooter: View {
                 Image(systemName: "power")
             }
             .buttonStyle(.glass)
-            .accessibilityLabel(Text("Quit LLMUsage"))
-            .help(Text("Quit LLMUsage"))
+            .accessibilityLabel(Text("Quit Agenty"))
+            .help(Text("Quit Agenty"))
         }
     }
 }

@@ -135,12 +135,12 @@
         }
       }
     },
-    "Approve LLMUsage in System Settings › Login Items" : {
+    "Approve Agenty in System Settings › Login Items" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cho phép LLMUsage trong Cài đặt hệ thống › Mục đăng nhập"
+            "value" : "Cho phép Agenty trong Cài đặt hệ thống › Mục đăng nhập"
           }
         }
       }
@@ -255,32 +255,32 @@
         }
       }
     },
-    "Keychain access denied — allow LLMUsage to read “Claude Code-credentials”" : {
+    "Keychain access denied — allow Agenty to read “Claude Code-credentials”" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quyền truy cập Keychain bị từ chối — hãy cho phép LLMUsage đọc “Claude Code-credentials”"
+            "value" : "Quyền truy cập Keychain bị từ chối — hãy cho phép Agenty đọc “Claude Code-credentials”"
           }
         }
       }
     },
-    "LLMUsage: %@" : {
+    "Agenty: %@" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "LLMUsage: %@"
+            "value" : "Agenty: %@"
           }
         }
       }
     },
-    "LLMUsage: no data" : {
+    "Agenty: no data" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "LLMUsage: chưa có dữ liệu"
+            "value" : "Agenty: chưa có dữ liệu"
           }
         }
       }
@@ -355,16 +355,6 @@
         }
       }
     },
-    "Not signed in — run `grok login`" : {
-      "localizations" : {
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chưa đăng nhập — chạy `grok login`"
-          }
-        }
-      }
-    },
     "Notifications" : {
       "localizations" : {
         "vi" : {
@@ -435,12 +425,12 @@
         }
       }
     },
-    "Quit LLMUsage" : {
+    "Quit Agenty" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thoát LLMUsage"
+            "value" : "Thoát Agenty"
           }
         }
       }

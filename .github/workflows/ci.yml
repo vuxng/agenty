@@ -20,7 +20,7 @@ jobs:
           version="$(sw_vers -productVersion)"
           major="${version%%.*}"
           if [ "$major" -lt 27 ]; then
-            echo "::notice::Runner has macOS $version; LLMUsage needs macOS 27 or newer. Skipping build and tests."
+            echo "::notice::Runner has macOS $version; Agenty needs macOS 27 or newer. Skipping build and tests."
             echo "supported=false" >> "$GITHUB_OUTPUT"
           else
             echo "supported=true" >> "$GITHUB_OUTPUT"
@@ -48,6 +48,6 @@ jobs:
       - name: Build app
         if: steps.guard.outputs.supported == 'true'
         run: >
-          xcodebuild -project LLMUsage.xcodeproj -scheme LLMUsage
+          xcodebuild -project Agenty.xcodeproj -scheme Agenty
           -configuration Debug -destination 'platform=macOS,arch=arm64'
           -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO

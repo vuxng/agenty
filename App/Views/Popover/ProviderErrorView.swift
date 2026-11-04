@@ -20,7 +20,7 @@ struct ProviderErrorView: View {
                 Button("Retry", action: onRetryKeychain).controlSize(.small)
             case .unexpectedFormat:
                 Button("Report issue") {
-                    if let url = URL(string: "https://github.com/vuxng/llm-usage/issues/new") {
+                    if let url = URL(string: "https://github.com/vuxng/agenty/issues/new") {
                         NSWorkspace.shared.open(url)
                     }
                 }
@@ -38,10 +38,9 @@ struct ProviderErrorView: View {
             switch provider {
             case .claude: return "Not signed in — run `claude`"
             case .codex: return "Not signed in — run `codex login`"
-            case .grok: return "Not signed in — run `grok login`"
             }
         case .tokenExpired: return "Session expired — open Claude Code once"
-        case .keychainDenied: return "Keychain access denied — allow LLMUsage to read “Claude Code-credentials”"
+        case .keychainDenied: return "Keychain access denied — allow Agenty to read “Claude Code-credentials”"
         case .cliNotFound: return "\(name) CLI not found"
         case .network: return "Can't reach \(name) — will retry"
         case .unexpectedFormat: return "API format changed"

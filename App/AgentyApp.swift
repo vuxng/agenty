@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct LLMUsageApp: App {
+struct AgentyApp: App {
     @State private var model = AppModel()
 
     var body: some Scene {

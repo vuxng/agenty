@@ -18,4 +18,4 @@ build/
 .claude/worktrees/
 
 # XcodeGen output
-LLMUsage.xcodeproj/
+Agenty.xcodeproj/
