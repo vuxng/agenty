@@ -70,13 +70,14 @@ EOF
 }
 
 # run_case <name> <expected exit> <expected output substring> <check> <key on stdin> <version>
-#          [zip version] [app version] [notes]
+#          [zip version] [app version] [notes] [prepare: shell run in the case root first]
 run_case() {
   local name="$1" want_exit="$2" want_text="$3" check="$4" key="$5" version="$6"
-  local zip_version="${7:-0.2.0}" app_version="${8:-0.2.0}" notes="${9:-$NOTES}"
+  local zip_version="${7:-0.2.0}" app_version="${8:-0.2.0}" notes="${9:-$NOTES}" prepare="${10:-}"
   local root code=0 output
   root="$(mktemp -d "$WORK/case.XXXXXX")"
   make_root "$root" "$zip_version" "$app_version" "$notes"
+  if [ -n "$prepare" ]; then (cd "$root" && eval "$prepare"); fi
   output="$(cd "$root" && printf '%s' "$key" | env -i HOME="$HOME" PATH="$root/bin:/usr/bin:/bin:/usr/sbin" \
     FAKE_LOG="$root/log" ED25519="$WORK/ed25519" SPARKLE_BIN="$root/bin" \
     bash scripts/make-appcast.sh "$version" 2>&1)" || code=$?
@@ -116,6 +117,11 @@ run_case version_mismatch_fails 1 "holds version 0.2.0, not 0.2.1" '[ ! -e build
   "$SEED" 0.2.1 0.2.1 0.2.0
 run_case key_never_in_arguments 0 "" '[ -s log/sign_update.args ] && ! grep -F -- "$SEED" log/sign_update.args' \
   "$SEED" 0.2.0
+
+# A broken verifier must not be reported as a key mismatch: that message invites a key rotation.
+run_case verifier_that_does_not_compile_is_not_a_key_mismatch 1 "could not compile scripts/verify-ed-signature.swift" \
+  '[ ! -e build/appcast.xml ]' "$SEED" 0.2.0 0.2.0 0.2.0 "$NOTES" \
+  'echo "this is not Swift" > scripts/verify-ed-signature.swift'
 
 echo "$passed passed, $failed failed"
 [ "$failed" = 0 ]

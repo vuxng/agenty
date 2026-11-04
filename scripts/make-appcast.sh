@@ -57,8 +57,14 @@ else
   exit 1
 fi
 
+# Compile first: a broken verifier must never read as a key mismatch (that message invites a
+# key rotation, which strands every install).
+if ! swiftc -O -o "$work/verify-ed-signature" scripts/verify-ed-signature.swift; then
+  echo "error: could not compile scripts/verify-ed-signature.swift." >&2
+  exit 1
+fi
 check=0
-swift scripts/verify-ed-signature.swift "$zip" "$signature" "$public_key" || check=$?
+"$work/verify-ed-signature" "$zip" "$signature" "$public_key" || check=$?
 if [ "$check" = 1 ]; then
   echo "error: the Sparkle key does not match SUPublicEDKey in the app ($public_key)." >&2
   exit 1
