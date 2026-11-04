@@ -9,6 +9,7 @@
 # Notarization (optional, needs SIGN_IDENTITY):
 #   NOTARY_KEYCHAIN_PROFILE                              notarytool store-credentials profile (local), or
 #   NOTARY_KEY_PATH + NOTARY_KEY_ID + NOTARY_ISSUER_ID   App Store Connect API key (CI).
+# REQUIRE_NOTARIZATION=1   Fail before building unless signing and notary credentials are set (CI).
 # BUILD_NUMBER      CFBundleVersion; defaults to the commit count of HEAD.
 #
 # Output: build/Agenty-<version>-arm64.zip and build/Agenty-<version>-arm64.zip.sha256
@@ -54,6 +55,22 @@ elif [ -n "${NOTARY_KEY_PATH:-}" ] && [ -n "${NOTARY_KEY_ID:-}" ] && [ -n "${NOT
   notary_auth=(--key "$NOTARY_KEY_PATH" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID")
 fi
 
+if [ "${REQUIRE_NOTARIZATION:-}" = "1" ]; then
+  if [ -z "$SIGN_IDENTITY" ]; then
+    echo "error: notarization is required but SIGN_IDENTITY is not set." >&2
+    exit 1
+  fi
+  if [ "${#notary_auth[@]}" -eq 0 ]; then
+    echo "error: notarization is required but notary credentials are missing" \
+      "(NOTARY_KEYCHAIN_PROFILE, or NOTARY_KEY_PATH + NOTARY_KEY_ID + NOTARY_ISSUER_ID)." >&2
+    exit 1
+  fi
+  if [ -z "${NOTARY_KEYCHAIN_PROFILE:-}" ] && [ ! -s "$NOTARY_KEY_PATH" ]; then
+    echo "error: notarization is required but the API key file $NOTARY_KEY_PATH is missing or empty." >&2
+    exit 1
+  fi
+fi
+
 make_zip() {
   rm -f "$ZIP"
   ditto -c -k --keepParent "$APP" "$ZIP"
@@ -89,7 +106,7 @@ fi
 make_zip
 
 if [ -n "$SIGN_IDENTITY" ] && [ "${#notary_auth[@]}" -gt 0 ]; then
-  xcrun notarytool submit "$ZIP" --wait --output-format json "${notary_auth[@]}" > build/notary.json || true
+  xcrun notarytool submit "$ZIP" --wait --timeout 1h --output-format json "${notary_auth[@]}" > build/notary.json || true
   status="$(plutil -extract status raw -o - build/notary.json 2>/dev/null || echo unknown)"
   submission_id="$(plutil -extract id raw -o - build/notary.json 2>/dev/null || true)"
   echo "Notarization status: $status (submission $submission_id)"
@@ -111,6 +128,8 @@ if [ -n "$SIGN_IDENTITY" ] && [ "${#notary_auth[@]}" -gt 0 ]; then
     echo "error: Gatekeeper does not report a notarized Developer ID app." >&2
     exit 1
   fi
+elif [ -z "$SIGN_IDENTITY" ]; then
+  echo "notice: skipping notarization (ad-hoc build)"
 else
   echo "notice: skipping notarization (no credentials)"
 fi
