@@ -114,6 +114,68 @@ import Testing
         #expect(await b.fetchCount == 1)
     }
 
+    @Test func forceSkipsRateLimitedProviderOnly() async {
+        let claude = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: nil))])
+        let codex = StubProvider(id: .codex, results: [.success(snap(.codex))])
+        let store = makeStore([claude, codex])
+        await store.refreshAll()
+        await store.refreshAll(force: true)
+        #expect(await claude.fetchCount == 1)
+        #expect(await codex.fetchCount == 2)
+        #expect(store.states[.claude] == .failed(.rateLimited(retryAfter: nil), last: nil))
+    }
+
+    @Test func rateLimitWithoutRetryAfterHoldsForBackoff() async {
+        let stub = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: nil))])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        clock.advance(by: .seconds(59))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 1)
+        clock.advance(by: .seconds(2))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+    }
+
+    @Test func rateLimitHoldGrowsWithRepeats() async {
+        let stub = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: nil))])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        clock.advance(by: .seconds(61))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+        clock.advance(by: .seconds(61))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+        clock.advance(by: .seconds(60))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 3)
+    }
+
+    @Test func retryAfterExtendsRateLimitHold() async {
+        let stub = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: .seconds(600)))])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        clock.advance(by: .seconds(599))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 1)
+        clock.advance(by: .seconds(2))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+    }
+
+    @Test func successAfterRateLimitLiftsHold() async {
+        let recovered = snap(.claude)
+        let stub = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: nil)), .success(recovered)])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        clock.advance(by: .seconds(61))
+        await store.refreshAll()
+        #expect(store.states[.claude] == .loaded(recovered))
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 3)
+    }
+
     @Test func disabledProviderIsIdle() async {
         var config = StoreConfiguration()
         config.enabled = [.codex]
