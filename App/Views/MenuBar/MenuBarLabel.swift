@@ -12,8 +12,7 @@ struct MenuBarLabel: View {
             style: style,
             summaries: store.summaries,
             overall: store.overall,
-            colorScheme: colorScheme,
-            badge: MenuBarRenderer.buildBadge
+            colorScheme: colorScheme
         ))
         .accessibilityLabel(Text(accessibilitySummary))
     }

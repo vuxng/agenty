@@ -6,8 +6,24 @@ struct PopoverFooter: View {
     let store: UsageStore
     let isStale: Bool
 
+    /// "DEV" on Debug builds ("Agenty Dev"), so they can't be mistaken for the installed Agenty.
+    private static let buildBadge: String? = {
+        #if DEBUG
+        return "DEV"
+        #else
+        return nil
+        #endif
+    }()
+
     var body: some View {
         HStack(spacing: 8) {
+            if let badge = Self.buildBadge {
+                Text(verbatim: badge)
+                    .font(.caption2.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.quaternary, in: Capsule())
+            }
             Group {
                 if let last = store.lastRefreshAt {
                     Text("Updated \(last, format: .dateTime.hour().minute())")
