@@ -41,11 +41,15 @@ struct ProviderCard: View {
         }
     }
 
-    /// Network errors with a last snapshot show no row (the footer turns orange instead).
+    /// Network and rate-limit errors with a last snapshot show no row (the footer turns orange instead).
     private var visibleError: UsageError? {
         guard let error = summary.displayError else { return nil }
-        if case .network = error, summary.state.snapshot != nil { return nil }
-        return error
+        switch error {
+        case .network, .rateLimited:
+            return summary.state.snapshot == nil ? error : nil
+        default:
+            return error
+        }
     }
 
     @ViewBuilder private var content: some View {

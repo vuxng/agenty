@@ -61,7 +61,9 @@ public struct ClaudeProvider: UsageProvider {
         case 401, 403:
             throw .tokenExpired
         case 429:
-            throw .network(retryAfter: Self.retryAfter(response))
+            let header = response.value(forHTTPHeaderField: "Retry-After") ?? "none"
+            Self.log.notice("claude rate limited, Retry-After: \(header, privacy: .public)")
+            throw .rateLimited(retryAfter: Self.retryAfter(response))
         case 500...599:
             throw .network(retryAfter: nil)
         default:

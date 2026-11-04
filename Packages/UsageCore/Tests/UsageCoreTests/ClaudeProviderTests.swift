@@ -93,10 +93,10 @@ import Testing
     }
 
     @Test func http429UsesRetryAfter() async {
-        await expect(.network(retryAfter: .seconds(120)), FakeHTTPClient(status: 429, headers: ["Retry-After": "120"]))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"]))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "-5"]))
+        await expect(.rateLimited(retryAfter: .seconds(120)), FakeHTTPClient(status: 429, headers: ["Retry-After": "120"]))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"]))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "-5"]))
     }
 
     @Test func http503IsNetwork() async {

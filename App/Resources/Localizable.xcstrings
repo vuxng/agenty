@@ -27,6 +27,16 @@
         }
       }
     },
+    "%@ is limiting requests — will retry" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ đang giới hạn số lần gọi — sẽ thử lại"
+          }
+        }
+      }
+    },
     "%@ path" : {
       "localizations" : {
         "vi" : {
