@@ -60,20 +60,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Lint scripts
-        run: shellcheck scripts/*.sh
+      # Pinned to match local development; the image's own ShellCheck is older and
+      # reports different warnings.
+      - name: Lint scripts (ShellCheck 0.11.0)
+        run: |
+          pipx run --spec shellcheck-py==0.11.0.1 shellcheck --version
+          pipx run --spec shellcheck-py==0.11.0.1 shellcheck scripts/*.sh
 
       - name: Test check-version
         run: bash scripts/test-check-version.sh
-
-  version-check:
-    # A PR into stable is a release: MARKETING_VERSION must be new and greater than the last tag.
-    if: github.event_name == 'pull_request' && github.base_ref == 'stable'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Check release version
-        run: scripts/check-version.sh

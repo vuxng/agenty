@@ -81,7 +81,11 @@ Trigger: `push` và `pull_request` vào `[next, stable]`.
 |---|---|---|---|
 | `build` | `xcode-27` | Mọi push/PR | Giữ như hiện tại: guard macOS 27 (bỏ qua nếu runner thấp hơn), chọn Xcode 27.2, `swift test` cho UsageCore, `xcodegen generate`, build Debug với `CODE_SIGNING_ALLOWED=NO` |
 | `scripts` | `ubuntu-latest` | Mọi push/PR | `shellcheck scripts/*.sh` và `scripts/test-check-version.sh` |
-| `version-check` | `ubuntu-latest` | Chỉ `pull_request` có base `stable` | Checkout `fetch-depth: 0`, chạy `scripts/check-version.sh` |
+| `version-check` | `ubuntu-latest` | Chỉ `pull_request` vào `stable` | Checkout `fetch-depth: 0`, chạy `scripts/check-version.sh` |
+
+`version-check` nằm trong workflow riêng `.github/workflows/version-check.yml` (chỉ trigger `pull_request` vào `stable`).
+Nếu để chung `ci.yml`, mỗi lần push vào `next` sẽ sinh một run `version-check` bị skip trên commit đó, và check bắt buộc của
+`stable` có thể coi run skip ấy là pass. Job `scripts` dùng ShellCheck 0.11.0 cố định (`shellcheck-py==0.11.0.1`) cho khớp với local.
 
 ### 4.2 `.github/workflows/release.yml` (mới)
 
