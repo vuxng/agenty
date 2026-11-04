@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [next, stable]
 
+permissions:
+  contents: read
+
 env:
   XCODE_APP: /Applications/Xcode_27.2.app
 
@@ -16,6 +19,10 @@ jobs:
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v7
+
+      # Runs build-release.sh against a stubbed toolchain; needs macOS (plutil), not 27.
+      - name: Test build-release
+        run: bash scripts/test-build-release.sh
 
       - name: Check macOS version
         id: guard
@@ -69,3 +76,9 @@ jobs:
 
       - name: Test check-version
         run: bash scripts/test-check-version.sh
+
+      - name: Test publish-release
+        run: bash scripts/test-publish-release.sh
+
+      - name: Test release secrets wizard
+        run: bash scripts/test-setup-release-secrets.sh

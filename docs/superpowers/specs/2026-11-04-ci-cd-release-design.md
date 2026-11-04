@@ -79,13 +79,14 @@ Trigger: `push` và `pull_request` vào `[next, stable]`.
 
 | Job | Runner | Chạy khi | Làm gì |
 |---|---|---|---|
-| `build` | `xcode-27` | Mọi push/PR | Giữ như hiện tại: guard macOS 27 (bỏ qua nếu runner thấp hơn), chọn Xcode 27.2, `swift test` cho UsageCore, `xcodegen generate`, build Debug với `CODE_SIGNING_ALLOWED=NO` |
-| `scripts` | `ubuntu-latest` | Mọi push/PR | `shellcheck scripts/*.sh` và `scripts/test-check-version.sh` |
+| `build` | `xcode-27` | Mọi push/PR | `scripts/test-build-release.sh` (toolchain giả, chỉ cần macOS), rồi như cũ: guard macOS 27 (bỏ qua nếu runner thấp hơn), chọn Xcode 27.2, `swift test` cho UsageCore, `xcodegen generate`, build Debug với `CODE_SIGNING_ALLOWED=NO` |
+| `scripts` | `ubuntu-latest` | Mọi push/PR | `shellcheck scripts/*.sh`, `test-check-version.sh`, `test-publish-release.sh`, `test-setup-release-secrets.sh` |
 | `version-check` | `ubuntu-latest` | Chỉ `pull_request` vào `stable` | Checkout `fetch-depth: 0`, chạy `scripts/check-version.sh` |
 
 `version-check` nằm trong workflow riêng `.github/workflows/version-check.yml` (chỉ trigger `pull_request` vào `stable`).
 Nếu để chung `ci.yml`, mỗi lần push vào `next` sẽ sinh một run `version-check` bị skip trên commit đó, và check bắt buộc của
 `stable` có thể coi run skip ấy là pass. Job `scripts` dùng ShellCheck 0.11.0 cố định (`shellcheck-py==0.11.0.1`) cho khớp với local.
+`ci.yml` chỉ có `permissions: contents: read`.
 
 ### 4.2 `.github/workflows/release.yml` (mới)
 
@@ -95,6 +96,8 @@ Nếu để chung `ci.yml`, mỗi lần push vào `next` sẽ sinh một run `ve
 - `permissions: contents: write`.
 - `environment: release`. Secrets nằm ở environment này, deployment branch policy chỉ cho `stable`.
 - Runner `xcode-27`. Nếu runner không phải macOS 27 thì **báo lỗi** (khác CI là bỏ qua).
+- `timeout-minutes: 90`; riêng notarize bị chặn 1 giờ (`notarytool --timeout 1h`).
+- `REQUIRE_NOTARIZATION=1`: thiếu identity hoặc thông tin notarize thì `build-release.sh` dừng trước khi build.
 
 Các bước:
 1. Checkout `fetch-depth: 0`.
@@ -107,15 +110,17 @@ Các bước:
      `set-key-partition-list -S apple-tool:,apple:`;
    - thêm keychain tạm vào search list;
    - nạp chứng chỉ trung gian Developer ID G2 từ `https://www.apple.com/certificateauthority/`
-     nếu runner chưa có;
+     (curl có retry) nếu runner chưa có; nhận biết theo SHA-256 vì G1 trùng tên;
    - xoá file `.p12` ngay sau khi import.
-5. Ghi API key `.p8` vào `$RUNNER_TEMP`, chạy `scripts/build-release.sh "$version"` với
+5. Một bước riêng ghi API key `.p8` vào `$RUNNER_TEMP` và xuất `NOTARY_KEY_PATH`, nên nội dung key
+   không nằm trong env của bước build. Rồi chạy `scripts/build-release.sh "$version"` với
    `SIGN_IDENTITY`, `TEAM_ID=8WJ6LC5Z59`, `NOTARY_KEY_PATH`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`.
 6. Kiểm tra Gatekeeper độc lập: giải nén zip vào thư mục tạm, `spctl --assess --type execute -vv`
    phải có `source=Notarized Developer ID`; `xcrun stapler validate` phải pass.
-7. `gh release create "v$version" <zip> <zip>.sha256 --target "$GITHUB_SHA" --title "Agenty $version" --generate-notes`.
+7. `scripts/publish-release.sh "$version"`: `gh release create "v$version" <zip> <zip>.sha256 --target "$GITHUB_SHA" --title "Agenty $version" --generate-notes`.
    **Tag chỉ được tạo ở bước này.** Bước nào trước đó lỗi thì không có tag, không có release,
-   chạy lại an toàn.
+   chạy lại an toàn. Nếu upload lỗi và còn sót bản draft thì script xoá draft đó; release đã
+   publish thì không bao giờ bị xoá. Test: `scripts/test-publish-release.sh` (gh giả).
 8. (`if: always()`) Xoá keychain tạm, file `.p8` và file tạm.
 
 ## 5. Scripts
@@ -146,6 +151,7 @@ Một script cho cả local và CI. Kết quả: `build/Agenty-<version>-arm64.z
 | `SIGN_IDENTITY` | Ký Developer ID. Cần thêm `TEAM_ID` |
 | `NOTARY_KEYCHAIN_PROFILE` | Notarize bằng profile `notarytool store-credentials` (dùng ở local) |
 | `NOTARY_KEY_PATH` + `NOTARY_KEY_ID` + `NOTARY_ISSUER_ID` | Notarize bằng App Store Connect API key (dùng trong CI) |
+| `REQUIRE_NOTARIZATION=1` | Dừng trước khi build nếu thiếu `SIGN_IDENTITY`, thiếu thông tin notarize, hoặc file key rỗng (dùng trong CI) |
 | `BUILD_NUMBER` | Mặc định `git rev-list --count HEAD` |
 
 Luồng khi có `SIGN_IDENTITY`:
@@ -156,11 +162,15 @@ Luồng khi có `SIGN_IDENTITY`:
 3. `codesign --verify --strict --deep`; `codesign -dvv` phải có `Authority=Developer ID Application`,
    `TeamIdentifier=$TEAM_ID`, cờ `runtime` và `Timestamp=`.
 4. `lipo -archs` phải đúng `arm64`.
-5. Nếu có thông tin notarize: `ditto` ra zip → `xcrun notarytool submit --wait --output-format json`
+5. Nếu có thông tin notarize: `ditto` ra zip → `xcrun notarytool submit --wait --timeout 1h --output-format json`
    → status phải là `Accepted`, nếu không thì in `notarytool log <id>` rồi exit 1 →
    `xcrun stapler staple` + `stapler validate` → zip lại → `spctl --assess` phải có
    `Notarized Developer ID`.
 6. Ghi `shasum -a 256`.
+
+Không notarize thì in `notice: skipping notarization (ad-hoc build)` hoặc `(no credentials)` tuỳ trường hợp.
+Test: `scripts/test-build-release.sh` chạy script với toolchain giả (`xcodegen`, `xcodebuild`, `codesign`,
+`xcrun`, …), không build hay ký thật.
 
 ## 6. Secrets và thiết lập do người dùng làm
 
