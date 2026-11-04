@@ -8,7 +8,10 @@ struct SettingsView: View {
     let model: AppModel
 
     var body: some View {
-        SettingsForm(providers: model.store.registeredProviders, locator: model.locator, notifier: model.notifier)
+        SettingsForm(
+            providers: model.store.registeredProviders, locator: model.locator,
+            notifier: model.notifier, updater: model.updater
+        )
     }
 }
 
@@ -17,6 +20,8 @@ struct SettingsForm: View {
     let locator: CLILocator
     /// nil in previews, so no real notification center is touched.
     var notifier: UserNotifier?
+    /// nil in previews, so Sparkle is never started there.
+    var updater: Updater?
 
     @AppStorage(SettingsKey.menuBarStyle) private var menuBarStyle = MenuBarStyle.bars.rawValue
     @AppStorage(SettingsKey.refreshMinutes) private var refreshMinutes = 5
@@ -89,6 +94,10 @@ struct SettingsForm: View {
                 Stepper("Critical at \(critical)%", value: criticalBinding, in: criticalRange, step: 5)
                 Toggle("Notify when limits reset", isOn: $notifyOnReset)
             }
+
+            if let updater {
+                UpdatesSection(updater: updater)
+            }
         }
         .formStyle(.grouped)
         .frame(width: 460)
@@ -145,6 +154,33 @@ struct SettingsForm: View {
             set: { critical = $0 }
         )
     }
+}
+
+private struct UpdatesSection: View {
+    @Bindable var updater: Updater
+
+    var body: some View {
+        Section("Updates") {
+            Toggle("Check for updates automatically", isOn: $updater.automaticallyChecksForUpdates)
+                .disabled(!updater.isEnabled)
+            HStack {
+                Text("Version \(Self.shortVersion) (\(Self.buildNumber))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Check for Updates…") { updater.checkForUpdates() }
+                    .disabled(!updater.isEnabled || !updater.canCheckForUpdates)
+            }
+            if !updater.isEnabled {
+                Text("Updates are off in debug builds")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private static let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+    private static let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
 }
 
 private struct ProviderToggle: View {

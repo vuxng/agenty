@@ -79,7 +79,7 @@ Trigger: `push` và `pull_request` vào `[next, stable]`.
 
 | Job | Runner | Chạy khi | Làm gì |
 |---|---|---|---|
-| `build` | `xcode-27` | Mọi push/PR | `scripts/test-build-release.sh` (toolchain giả, chỉ cần macOS), rồi như cũ: guard macOS 27 (bỏ qua nếu runner thấp hơn), chọn Xcode 27.2, `swift test` cho UsageCore, `xcodegen generate`, build Debug với `CODE_SIGNING_ALLOWED=NO` |
+| `build` | `xcode-27` | Mọi push/PR | `scripts/test-build-release.sh` và `scripts/test-make-appcast.sh` (toolchain giả, chỉ cần macOS), rồi như cũ: guard macOS 27 (bỏ qua nếu runner thấp hơn), chọn Xcode 27.2, `swift test` cho UsageCore, `xcodegen generate`, build Debug với `CODE_SIGNING_ALLOWED=NO` |
 | `scripts` | `ubuntu-latest` | Mọi push/PR | `shellcheck scripts/*.sh`, `test-check-version.sh`, `test-publish-release.sh`, `test-setup-release-secrets.sh` |
 | `version-check` | `ubuntu-latest` | Chỉ `pull_request` vào `stable` | Checkout `fetch-depth: 0`, chạy `scripts/check-version.sh` |
 
@@ -117,11 +117,14 @@ Các bước:
    `SIGN_IDENTITY`, `TEAM_ID=8WJ6LC5Z59`, `NOTARY_KEY_PATH`, `NOTARY_KEY_ID`, `NOTARY_ISSUER_ID`.
 6. Kiểm tra Gatekeeper độc lập: giải nén zip vào thư mục tạm, `spctl --assess --type execute -vv`
    phải có `source=Notarized Developer ID`; `xcrun stapler validate` phải pass.
-7. `scripts/publish-release.sh "$version"`: `gh release create "v$version" <zip> <zip>.sha256 --target "$GITHUB_SHA" --title "Agenty $version" --generate-notes`.
+7. Sinh release notes (`gh api …/releases/generate-notes` → `build/notes.md`), rồi `scripts/make-appcast.sh "$version"`
+   (khoá Sparkle qua stdin, chỉ bước này thấy secret `SPARKLE_ED_PRIVATE_KEY`) → `build/appcast.xml`. Chi tiết ở
+   `docs/superpowers/specs/2026-11-04-auto-update-design.md` §5.
+8. `scripts/publish-release.sh "$version"`: `gh release create "v$version" <zip> <zip>.sha256 build/appcast.xml --target "$GITHUB_SHA" --title "Agenty $version" --notes-file build/notes.md`.
    **Tag chỉ được tạo ở bước này.** Bước nào trước đó lỗi thì không có tag, không có release,
    chạy lại an toàn. Nếu upload lỗi và còn sót bản draft thì script xoá draft đó; release đã
    publish thì không bao giờ bị xoá. Test: `scripts/test-publish-release.sh` (gh giả).
-8. (`if: always()`) Xoá keychain tạm, file `.p8` và file tạm.
+9. (`if: always()`) Xoá keychain tạm, file `.p8` và file tạm.
 
 ## 5. Scripts
 

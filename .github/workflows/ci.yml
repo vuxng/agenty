@@ -24,6 +24,10 @@ jobs:
       - name: Test build-release
         run: bash scripts/test-build-release.sh
 
+      # Needs macOS too: plutil, xmllint and CryptoKit (through swift).
+      - name: Test make-appcast
+        run: bash scripts/test-make-appcast.sh
+
       - name: Check macOS version
         id: guard
         run: |
@@ -55,6 +59,11 @@ jobs:
         if: steps.guard.outputs.supported == 'true'
         run: xcodegen generate
 
+      # App/Info.plist is generated from project.yml but committed; they must not drift.
+      - name: Check generated Info.plist is committed
+        if: steps.guard.outputs.supported == 'true'
+        run: git diff --exit-code App/Info.plist
+
       - name: Build app
         if: steps.guard.outputs.supported == 'true'
         run: >
@@ -76,6 +85,9 @@ jobs:
 
       - name: Test check-version
         run: bash scripts/test-check-version.sh
+
+      - name: Test Info.plist update settings
+        run: bash scripts/test-info-plist.sh
 
       - name: Test publish-release
         run: bash scripts/test-publish-release.sh
