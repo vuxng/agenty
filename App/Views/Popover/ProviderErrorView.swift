@@ -20,7 +20,7 @@ struct ProviderErrorView: View {
                 Button("Retry", action: onRetryKeychain).controlSize(.small)
             case .unexpectedFormat:
                 Button("Report issue") {
-                    if let url = URL(string: "https://github.com/vuxng/llm-usage/issues/new") {
+                    if let url = URL(string: "https://github.com/vuxng/agenty/issues/new") {
                         NSWorkspace.shared.open(url)
                     }
                 }
