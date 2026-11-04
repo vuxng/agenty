@@ -27,6 +27,8 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         SUFeedURL: https://github.com/vuxng/agenty/releases/latest/download/appcast.xml
         SUEnableAutomaticChecks: true
+        # Always ask before installing: hide Sparkle's "Automatically download and install" option.
+        SUAllowsAutomaticUpdates: false
         SUPublicEDKey: VSzgrFXaXPBnifZoaF6tUenSC/Elaacp/IVhDdSJ3hs=
     settings:
       base:
