@@ -24,6 +24,10 @@ jobs:
       - name: Test build-release
         run: bash scripts/test-build-release.sh
 
+      # Needs macOS too: plutil, xmllint and CryptoKit (through swift).
+      - name: Test make-appcast
+        run: bash scripts/test-make-appcast.sh
+
       - name: Check macOS version
         id: guard
         run: |

@@ -1,6 +1,7 @@
 #!/bin/bash
-# Publish build/Agenty-<version>-arm64.zip and its .sha256 as GitHub Release v<version>
-# at $GITHUB_SHA: scripts/publish-release.sh <version>. Needs gh with a token (GH_TOKEN).
+# Publish build/Agenty-<version>-arm64.zip, its .sha256 and build/appcast.xml as GitHub Release
+# v<version> at $GITHUB_SHA, with build/notes.md as the release notes:
+# scripts/publish-release.sh <version>. Needs gh with a token (GH_TOKEN).
 #
 # With assets, gh creates a draft, uploads, then publishes it, and GitHub creates the tag
 # only at that last step. If any of it fails, the leftover draft is deleted so a re-run
@@ -17,8 +18,8 @@ tag="v$version"
 zip="build/Agenty-$version-arm64.zip"
 cd "$(dirname "$0")/.."
 
-if gh release create "$tag" "$zip" "$zip.sha256" \
-  --target "${GITHUB_SHA:?GITHUB_SHA must be set}" --title "Agenty $version" --generate-notes; then
+if gh release create "$tag" "$zip" "$zip.sha256" build/appcast.xml \
+  --target "${GITHUB_SHA:?GITHUB_SHA must be set}" --title "Agenty $version" --notes-file build/notes.md; then
   exit 0
 fi
 
