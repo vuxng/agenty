@@ -1,0 +1,23 @@
+name: Version check
+
+# A pull request into stable is a release: MARKETING_VERSION must be new and greater than the
+# latest tag. This job lives in its own workflow, triggered only by pull requests into stable,
+# so a skipped `version-check` run is never reported on a commit, where the stable ruleset's
+# required check could mistake it for a pass.
+on:
+  pull_request:
+    branches: [stable]
+
+permissions:
+  contents: read
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check release version
+        run: scripts/check-version.sh

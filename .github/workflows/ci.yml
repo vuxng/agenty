@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [next, stable]
   pull_request:
-    branches: [main]
+    branches: [next, stable]
+
+env:
+  XCODE_APP: /Applications/Xcode_27.2.app
 
 jobs:
   build:
@@ -29,7 +32,7 @@ jobs:
       - name: Select Xcode 27.2
         if: steps.guard.outputs.supported == 'true'
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.2.app
+          sudo xcode-select -s "$XCODE_APP"
           xcodebuild -version
           swift --version
 
@@ -51,3 +54,18 @@ jobs:
           xcodebuild -project Agenty.xcodeproj -scheme Agenty
           -configuration Debug -destination 'platform=macOS,arch=arm64'
           -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to match local development; the image's own ShellCheck is older and
+      # reports different warnings.
+      - name: Lint scripts (ShellCheck 0.11.0)
+        run: |
+          pipx run --spec shellcheck-py==0.11.0.1 shellcheck --version
+          pipx run --spec shellcheck-py==0.11.0.1 shellcheck scripts/*.sh
+
+      - name: Test check-version
+        run: bash scripts/test-check-version.sh
