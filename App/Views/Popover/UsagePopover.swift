@@ -52,10 +52,10 @@ private struct HangingProvider: UsageProvider {
 
 private func previewSnapshot(
     _ id: ProviderID, plan: String? = "pro", windows: [UsageWindow], credits: Credits? = nil,
-    age: TimeInterval = 0
+    age: TimeInterval = 0, email: String? = nil
 ) -> UsageSnapshot {
     UsageSnapshot(provider: id, plan: plan, windows: windows, credits: credits,
-                  fetchedAt: Date().addingTimeInterval(-age))
+                  fetchedAt: Date().addingTimeInterval(-age), accountEmail: email)
 }
 
 private func win(_ kind: WindowKind, _ pct: Double, hours: Double) -> UsageWindow {
@@ -65,9 +65,10 @@ private func win(_ kind: WindowKind, _ pct: Double, hours: Double) -> UsageWindo
 private let loadedResults: [ProviderID: Result<UsageSnapshot, UsageError>] = [
     .claude: .success(previewSnapshot(.claude, windows: [
         win(.session5h, 45, hours: 2.2), win(.weekly, 62, hours: 72), win(.weeklyModel("Opus"), 84, hours: 72),
-    ])),
+    ], email: "someone@example.com")),
     .codex: .success(previewSnapshot(.codex, plan: "plus", windows: [win(.weekly, 18, hours: 200)],
-                                     credits: Credits(balance: 61862.97, unlimited: false))),
+                                     credits: Credits(balance: 61862.97, unlimited: false),
+                                     email: "a.very.long.address.for.truncation@example.com")),
 ]
 
 #Preview("Loaded") { PreviewHost { await previewStore(loadedResults) } }

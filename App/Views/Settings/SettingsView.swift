@@ -29,6 +29,7 @@ struct SettingsForm: View {
     @AppStorage(SettingsKey.warningThreshold) private var warning = 80
     @AppStorage(SettingsKey.criticalThreshold) private var critical = 95
     @AppStorage(SettingsKey.notifyOnReset) private var notifyOnReset = true
+    @AppStorage(SettingsKey.showAccountEmail) private var showAccountEmail = false
 
     @State private var loginStatus = LoginItem.status
     @State private var loginError: String?
@@ -50,6 +51,7 @@ struct SettingsForm: View {
                 Picker("Refresh every", selection: $refreshMinutes) {
                     ForEach(AppDefaults.refreshChoices, id: \.self) { Text("\($0) min").tag($0) }
                 }
+                Toggle("Show account email", isOn: $showAccountEmail)
             }
 
             Section("Menu bar") {

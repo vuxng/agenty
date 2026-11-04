@@ -70,8 +70,12 @@ public struct CodexProvider: UsageProvider {
                     try await rpc.notify("initialized", params: nil)
                     let result = try await rpc.call("account/rateLimits/read",
                                                     params: .object(["excludeResetCreditDetails": .bool(true)]))
+                    // Best effort: a failed account lookup must not turn into "not logged in" for the whole card.
+                    let account = try? await rpc.call("account/read", params: .object([:]))
                     try await channel.finishInput()
-                    return try CodexRateLimitsMapper.snapshot(from: result, fetchedAt: fetchedAt)
+                    var snapshot = try CodexRateLimitsMapper.snapshot(from: result, fetchedAt: fetchedAt)
+                    snapshot.accountEmail = account.flatMap(CodexAccountMapper.email(from:))
+                    return snapshot
                 }
             }
         } catch let error as UsageError {

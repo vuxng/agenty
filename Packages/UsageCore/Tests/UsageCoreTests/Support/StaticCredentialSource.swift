@@ -8,6 +8,14 @@ struct StaticCredentialSource: CredentialSource {
     func load() throws -> ClaudeCredential? { credential }
 }
 
+/// Returns whatever credential was last set, so a test can swap tokens between fetches.
+final class MutableCredentialSource: CredentialSource, Sendable {
+    private let current: Mutex<ClaudeCredential?>
+    init(_ credential: ClaudeCredential?) { current = Mutex(credential) }
+    func set(_ credential: ClaudeCredential?) { current.withLock { $0 = credential } }
+    func load() throws -> ClaudeCredential? { current.withLock { $0 } }
+}
+
 struct ThrowingCredentialSource: CredentialSource {
     let error: CredentialSourceError
     init(_ error: CredentialSourceError) { self.error = error }
