@@ -125,6 +125,22 @@
         }
       }
     },
+    "Agenty %@ is available" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Agenty %@ is available"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã có Agenty %@"
+          }
+        }
+      }
+    },
     "API format changed" : {
       "localizations" : {
         "vi" : {
@@ -171,6 +187,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Không kết nối được %@ — sẽ thử lại"
+          }
+        }
+      }
+    },
+    "Check for updates automatically" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Check for updates automatically"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tự động kiểm tra bản cập nhật"
+          }
+        }
+      }
+    },
+    "Check for Updates…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Check for Updates…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiểm tra bản cập nhật…"
           }
         }
       }
@@ -251,6 +299,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phần trăm cao nhất"
+          }
+        }
+      }
+    },
+    "Install…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Install…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cài đặt…"
           }
         }
       }
@@ -525,6 +589,38 @@
         }
       }
     },
+    "Updates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Updates"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cập nhật"
+          }
+        }
+      }
+    },
+    "Updates are off in debug builds" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Updates are off in debug builds"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bản debug không kiểm tra cập nhật"
+          }
+        }
+      }
+    },
     "Usage" : {
       "localizations" : {
         "vi" : {
@@ -541,6 +637,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mức dùng đã về %lld%%"
+          }
+        }
+      }
+    },
+    "Version %@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phiên bản %1$@ (%2$@)"
           }
         }
       }

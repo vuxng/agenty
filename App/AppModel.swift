@@ -8,6 +8,7 @@ final class AppModel {
     let store: UsageStore
     let locator: CLILocator
     let notifier = UserNotifier()
+    let updater = Updater()
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let loop: RefreshLoop
