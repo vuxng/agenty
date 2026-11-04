@@ -1,3 +1,5 @@
+<img src="docs/images/icon.png" width="128" alt="Agenty icon">
+
 # Agenty
 
 A small macOS menu-bar app that shows how much of your Claude and Codex subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset.
@@ -40,14 +42,16 @@ Agenty relies on endpoints and methods that are not public, documented APIs: `/a
 
 The first time Agenty reads Claude Code's credentials from the Keychain, macOS asks for permission. Choose **Always Allow** so it does not ask again.
 
-"Always Allow" is remembered per app signature. Every new release build is ad-hoc signed, so macOS may ask again after you update. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry** or relaunch the app.
+"Always Allow" is remembered per app signature. Releases are all signed with the same Developer ID, so the permission carries over when you update. A build you make from source is ad-hoc signed, so macOS asks again after every rebuild. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry** or relaunch the app.
 
 ## Install
 
-Download the zip from the Releases page, unzip it and move `Agenty.app` to Applications. The app is ad-hoc signed, not notarized, so macOS Gatekeeper blocks the first launch. On macOS 15 and later, right-click → Open no longer bypasses it. Instead, try to open the app once, then go to System Settings › Privacy & Security and click **Open Anyway**. Or remove the quarantine flag from a terminal:
+Download `Agenty-<version>-arm64.zip` from the [Releases page](https://github.com/vuxng/agenty/releases), unzip it and move `Agenty.app` to Applications. The app is signed with a Developer ID and notarized by Apple, so it opens normally.
+
+To check the download, put the `.sha256` file from the same release next to the zip and run:
 
 ```sh
-xattr -dr com.apple.quarantine /path/to/Agenty.app
+shasum -a 256 -c Agenty-<version>-arm64.zip.sha256
 ```
 
 ## Build from source
@@ -69,7 +73,15 @@ xcrun xcstringstool sync App/Resources/Localizable.xcstrings \
   --stringsdata build/DerivedData/Build/Intermediates.noindex/Agenty.build/Debug/Agenty.build/Objects-normal/arm64/*.stringsdata
 ```
 
-Build a release zip with `scripts/build-release.sh <version>`; the result is in `build/`.
+Build a release zip with `scripts/build-release.sh <version>`; the result is in `build/`. It is ad-hoc signed unless you set `SIGN_IDENTITY` and `TEAM_ID`, which sign it with that Developer ID. Also set `NOTARY_KEYCHAIN_PROFILE` (a `notarytool store-credentials` profile) to notarize it.
+
+## Branches & releases
+
+- `next` is the default branch. Open pull requests against it.
+- `stable` holds released code only. Every merge into `stable` is a release.
+- To release, raise `MARKETING_VERSION` in `project.yml` on `next`, open a pull request from `next` to `stable`, and merge it with a merge commit. CI then signs and notarizes the app and publishes the `vX.Y.Z` release. The `version-check` job blocks the pull request if that version is already released.
+- For a hotfix, branch off `stable`, raise the patch version, and merge into `stable`. Then open a pull request from `stable` to `next` so the fix comes back.
+- Maintainers set up the signing secrets once with `scripts/setup-release-secrets.sh`.
 
 ## License
 
