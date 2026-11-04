@@ -59,6 +59,11 @@ jobs:
         if: steps.guard.outputs.supported == 'true'
         run: xcodegen generate
 
+      # Debug builds are "Agenty Dev" with their own bundle id; Release keeps the official one.
+      - name: Test build settings
+        if: steps.guard.outputs.supported == 'true'
+        run: bash scripts/test-build-settings.sh
+
       # App/Info.plist is generated from project.yml but committed; they must not drift.
       - name: Check generated Info.plist is committed
         if: steps.guard.outputs.supported == 'true'
