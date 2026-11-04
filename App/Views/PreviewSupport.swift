@@ -16,7 +16,7 @@ func previewStore(_ results: [ProviderID: Result<UsageSnapshot, UsageError>]) as
     let store = UsageStore(
         providers: providers,
         configuration: StoreConfiguration(enabled: Set(results.keys)),
-        defaults: UserDefaults(suiteName: "io.github.vuxng.LLMUsage.preview") ?? .standard
+        defaults: UserDefaults(suiteName: "io.github.vuxng.Agenty.preview") ?? .standard
     )
     await store.refreshAll()
     return store

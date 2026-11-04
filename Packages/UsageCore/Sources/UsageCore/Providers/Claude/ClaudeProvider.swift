@@ -5,7 +5,7 @@ public struct ClaudeProvider: UsageProvider {
     public let id: ProviderID = .claude
 
     private static let endpoint = URL(string: "https://api.anthropic.com/api/oauth/usage")!
-    private static let log = Logger(subsystem: "io.github.vuxng.LLMUsage", category: "claude")
+    private static let log = Logger(subsystem: "io.github.vuxng.Agenty", category: "claude")
 
     private let sources: [any CredentialSource]
     private let http: any HTTPClient

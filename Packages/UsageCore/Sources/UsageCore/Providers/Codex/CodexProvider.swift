@@ -6,7 +6,7 @@ import Synchronization
 public struct CodexProvider: UsageProvider {
     public let id: ProviderID = .codex
 
-    private static let log = Logger(subsystem: "io.github.vuxng.LLMUsage", category: "codex")
+    private static let log = Logger(subsystem: "io.github.vuxng.Agenty", category: "codex")
 
     private let locator: CLILocator
     private let pathOverride: @Sendable () -> String?
@@ -62,8 +62,8 @@ public struct CodexProvider: UsageProvider {
                     let rpc = JSONRPCClient(channel: channel, includesVersionField: false)
                     _ = try await rpc.call("initialize", params: .object([
                         "clientInfo": .object([
-                            "name": .string("llmusage"),
-                            "title": .string("LLMUsage"),
+                            "name": .string("agenty"),
+                            "title": .string("Agenty"),
                             "version": .string(version),
                         ]),
                     ]))

@@ -12,17 +12,17 @@ cd "$(dirname "$0")/.."
 
 xcodegen generate
 
-xcodebuild -project LLMUsage.xcodeproj -scheme LLMUsage -configuration Release \
+xcodebuild -project Agenty.xcodeproj -scheme Agenty -configuration Release \
   -destination 'platform=macOS,arch=arm64' -derivedDataPath build/DerivedData \
   MARKETING_VERSION="$VERSION" build
 
-APP="build/DerivedData/Build/Products/Release/LLMUsage.app"
-ZIP="build/LLMUsage-$VERSION-arm64.zip"
+APP="build/DerivedData/Build/Products/Release/Agenty.app"
+ZIP="build/Agenty-$VERSION-arm64.zip"
 
 codesign --force --deep --options runtime --sign - "$APP"
 codesign --verify --strict "$APP"
 
-ARCHS="$(lipo -archs "$APP/Contents/MacOS/LLMUsage")"
+ARCHS="$(lipo -archs "$APP/Contents/MacOS/Agenty")"
 if [ "$ARCHS" != "arm64" ]; then
   echo "Expected arm64 only, got: $ARCHS" >&2
   exit 1

@@ -39,7 +39,7 @@ import Testing
         #expect(snap.fetchedAt == Date(timeIntervalSince1970: 7))
         #expect(ch.sent.map { $0["method"] } == [.string("initialize"), .string("initialized"), .string("account/rateLimits/read")])
         #expect(ch.sent[0]["params"] == .object(["clientInfo": .object([
-            "name": .string("llmusage"), "title": .string("LLMUsage"), "version": .string("0.1.0")])]))
+            "name": .string("agenty"), "title": .string("Agenty"), "version": .string("0.1.0")])]))
         #expect(ch.sent[2]["params"] == .object(["excludeResetCreditDetails": .bool(true)]))
         #expect(ch.sent.allSatisfy { $0["jsonrpc"] == nil })
         #expect(ch.inputFinished)

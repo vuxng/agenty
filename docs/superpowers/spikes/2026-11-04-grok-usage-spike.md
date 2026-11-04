@@ -1,5 +1,7 @@
 # Spike §9.1 — Nguồn dữ liệu "Usage limit" của Grok
 
+> **Cập nhật 2026-11-04:** Grok đã bị gỡ khỏi app (nay là Agenty) vì không lấy được usage. Tài liệu này chỉ còn giá trị lưu trữ.
+
 - **Ngày:** 2026-11-04
 - **Phiên bản kiểm tra:** `grok` 1.0.46, sau đó tự cập nhật lên 1.0.70 trong lúc spike
 - **Kết luận: ĐƯỢC, nhưng chưa xác nhận bằng response thật.** Đã tìm ra cơ chế và tên field

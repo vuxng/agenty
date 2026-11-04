@@ -84,7 +84,6 @@ public actor CLILocator {
             home.path + "/.local/bin",
             "/opt/homebrew/bin",
             "/usr/local/bin",
-            home.path + "/.grok/bin",
         ]
         for directory in directories {
             let candidate = directory + "/" + name

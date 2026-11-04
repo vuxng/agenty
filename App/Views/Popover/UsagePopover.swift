@@ -72,7 +72,7 @@ private let loadedResults: [ProviderID: Result<UsageSnapshot, UsageError>] = [
         let store = UsageStore(
             providers: [HangingProvider(id: .claude), HangingProvider(id: .codex)],
             configuration: StoreConfiguration(enabled: [.claude, .codex]),
-            defaults: UserDefaults(suiteName: "io.github.vuxng.LLMUsage.preview") ?? .standard
+            defaults: UserDefaults(suiteName: "io.github.vuxng.Agenty.preview") ?? .standard
         )
         Task { await store.refreshAll() }
         return store
@@ -84,7 +84,6 @@ private let loadedResults: [ProviderID: Result<UsageSnapshot, UsageError>] = [
         await previewStore([
             .claude: .failure(.notLoggedIn),
             .codex: .failure(.cliNotFound),
-            .grok: .failure(.unexpectedFormat("x")),
         ])
     }
 }

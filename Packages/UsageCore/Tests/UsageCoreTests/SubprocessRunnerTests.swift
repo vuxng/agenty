@@ -16,7 +16,7 @@ import Testing
 
     @Test func passesExtraEnvironment() async throws {
         let line = try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
-            arguments: ["-c", "echo \"$LLMUSAGE_TEST\""], environment: ["LLMUSAGE_TEST": "ok"]) { try await $0.receive() }
+            arguments: ["-c", "echo \"$AGENTY_TEST\""], environment: ["AGENTY_TEST": "ok"]) { try await $0.receive() }
         #expect(line == "ok")
     }
 

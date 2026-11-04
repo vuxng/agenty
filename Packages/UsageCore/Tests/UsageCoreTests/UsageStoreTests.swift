@@ -5,7 +5,7 @@ import Testing
 @MainActor @Suite final class UsageStoreTests {
     let clock = TestClock()
     /// An absolute-path suite keeps the plist in the temp directory instead of ~/Library/Preferences.
-    let suitePath = FileManager.default.temporaryDirectory.appending(path: "llmusage-store-\(UUID().uuidString)").path
+    let suitePath = FileManager.default.temporaryDirectory.appending(path: "agenty-store-\(UUID().uuidString)").path
     let defaults: UserDefaults
 
     init() {
@@ -41,7 +41,6 @@ import Testing
         #expect(store.states[.claude] == .loaded(snap(.claude)))
         #expect(store.states[.codex] == .loaded(snap(.codex)))
         #expect(store.lastRefreshAt == clock.now())
-        #expect(store.states[.grok] == nil)
     }
 
     @Test func failureIsolatedPerProvider() async {

@@ -6,7 +6,6 @@ enum ProviderStyle {
         switch p {
         case .claude: "✳"
         case .codex: "◎"
-        case .grok: "✕"
         }
     }
 
@@ -14,7 +13,6 @@ enum ProviderStyle {
         switch p {
         case .claude: Color(red: 217 / 255, green: 119 / 255, blue: 87 / 255)
         case .codex: Color(red: 16 / 255, green: 163 / 255, blue: 127 / 255)
-        case .grok: Color(red: 154 / 255, green: 160 / 255, blue: 166 / 255)
         }
     }
 }

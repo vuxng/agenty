@@ -17,15 +17,15 @@ struct MenuBarLabel: View {
         .accessibilityLabel(Text(accessibilitySummary))
     }
 
-    /// For example "LLMUsage: Claude 62%, Codex 23%".
+    /// For example "Agenty: Claude 62%, Codex 23%".
     private var accessibilitySummary: String {
         let parts = store.summaries.compactMap { summary -> String? in
             guard let window = summary.window else { return nil }
             let percent = Int(window.usedPercent.rounded())
             return String(localized: "\(summary.provider.displayName) \(percent)%")
         }
-        guard !parts.isEmpty else { return String(localized: "LLMUsage: no data") }
-        return String(localized: "LLMUsage: \(parts.joined(separator: ", "))")
+        guard !parts.isEmpty else { return String(localized: "Agenty: no data") }
+        return String(localized: "Agenty: \(parts.joined(separator: ", "))")
     }
 }
 
@@ -61,8 +61,7 @@ struct MenuBarPreviewGrid: View {
     private static func makeStores() async -> [PreviewEntry] {
         func ok(_ p: Double) -> [ProviderID: Result<UsageSnapshot, UsageError>] {
             [.claude: .success(.preview(.claude, percent: p)),
-             .codex: .success(.preview(.codex, percent: 30)),
-             .grok: .success(.preview(.grok, percent: 12))]
+             .codex: .success(.preview(.codex, percent: 30))]
         }
         var error = ok(40)
         error[.codex] = .failure(.notLoggedIn)
