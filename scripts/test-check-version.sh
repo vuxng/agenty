@@ -42,6 +42,11 @@ run_case() {
   if [ "$want_exit" = 0 ] && [ -n "$want_out" ]; then
     grep -qx "$want_out" "$tmp/out" 2>/dev/null || ok=0
   fi
+  # A failed check must not print a version or hand one to later workflow steps.
+  if [ "$want_exit" != 0 ]; then
+    [ -z "$out" ] || ok=0
+    [ ! -s "$tmp/out" ] || ok=0
+  fi
   if [ "$ok" = 1 ]; then
     passed=$((passed + 1))
     echo "ok   $name"
