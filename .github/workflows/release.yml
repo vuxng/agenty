@@ -19,6 +19,10 @@ env:
   XCODE_APP: /Applications/Xcode_27.2.app
   TEAM_ID: 8WJ6LC5Z59
   SIGN_IDENTITY: "Developer ID Application: Vu Nguyen (8WJ6LC5Z59)"
+  # build-release.sh stops before building if signing or notary credentials are missing.
+  REQUIRE_NOTARIZATION: "1"
+  # SHA-256 of Apple's Developer ID G2 intermediate. G1 has the same name, so match the hash.
+  DEVELOPER_ID_G2_SHA256: F16CD3C54C7F83CEA4BF1A3E6A0819C8AAA8E4A1528FD144715F350643D2DF3A
 
 jobs:
   release:
@@ -26,6 +30,8 @@ jobs:
     # Same macOS 27 preview image as CI; see ci.yml.
     runs-on: xcode-27
     environment: release
+    # Notarization is capped at 1h by build-release.sh; this bounds the rest.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
         with:
@@ -67,23 +73,33 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security import "$RUNNER_TEMP/cert.p12" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
           rm -f "$RUNNER_TEMP/cert.p12"
-          curl -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
-          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$KEYCHAIN" || true
+          if security find-certificate -a -Z -c "Developer ID Certification Authority" 2>/dev/null \
+              | grep -F "SHA-256 hash: $DEVELOPER_ID_G2_SHA256" >/dev/null; then
+            echo "Developer ID G2 intermediate is already installed."
+          else
+            curl -fsSL --retry 3 --retry-delay 5 -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" \
+              https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+            security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$KEYCHAIN" || true
+          fi
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
           # shellcheck disable=SC2046  # intentional word splitting of the existing keychain list
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
           echo "SIGN_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
 
+      # Only this step sees the key's contents; the build gets a path to it.
+      - name: Write notary API key
+        env:
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+        run: |
+          printf '%s' "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          echo "NOTARY_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+
       - name: Build, sign and notarize
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
-        run: |
-          export NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
-          printf '%s' "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$NOTARY_KEY_PATH"
-          scripts/build-release.sh "$VERSION"
+        run: scripts/build-release.sh "$VERSION"
 
       - name: Verify Gatekeeper
         env:
@@ -104,10 +120,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "v$VERSION"
-          "build/Agenty-$VERSION-arm64.zip" "build/Agenty-$VERSION-arm64.zip.sha256"
-          --target "$GITHUB_SHA" --title "Agenty $VERSION" --generate-notes
+        run: scripts/publish-release.sh "$VERSION"
 
       - name: Clean up signing material
         if: always()
