@@ -76,6 +76,31 @@ make_zip() {
   ditto -c -k --keepParent "$APP" "$ZIP"
 }
 
+# Sparkle ships its helpers ad-hoc signed, and Xcode re-signs only the framework itself, so
+# a Developer ID build signs them one by one from the inside out (never --deep), then re-seals
+# the app. https://sparkle-project.org/documentation/sandboxing/#code-signing
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+signed_components=(
+  "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
+  "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
+  "$SPARKLE/Versions/B/Autoupdate"
+  "$SPARKLE/Versions/B/Updater.app"
+  "$SPARKLE"
+  "$APP"
+)
+
+developer_id_sign() {
+  local path="$1"
+  local args=(-f -s "$SIGN_IDENTITY" -o runtime --timestamp)
+  if [ -n "${SIGN_KEYCHAIN:-}" ]; then
+    args+=(--keychain "$SIGN_KEYCHAIN")
+  fi
+  case "$path" in
+    */Downloader.xpc | "$APP") args+=(--preserve-metadata=entitlements) ;;
+  esac
+  codesign "${args[@]}" "$path"
+}
+
 xcodegen generate
 
 xcodebuild -project Agenty.xcodeproj -scheme Agenty -configuration Release \
@@ -84,14 +109,19 @@ xcodebuild -project Agenty.xcodeproj -scheme Agenty -configuration Release \
   ${sign_settings[@]+"${sign_settings[@]}"} build
 
 if [ -n "$SIGN_IDENTITY" ]; then
-  codesign --verify --strict --deep "$APP"
-  details="$(codesign -dvv "$APP" 2>&1)"
-  for expected in "Authority=Developer ID Application" "TeamIdentifier=$TEAM_ID" "(runtime)" "Timestamp="; do
-    if [[ "$details" != *"$expected"* ]]; then
-      echo "error: codesign -dvv output is missing: $expected" >&2
-      exit 1
-    fi
+  for component in "${signed_components[@]}"; do
+    developer_id_sign "$component"
   done
+  for component in "${signed_components[@]}"; do
+    details="$(codesign -dvv "$component" 2>&1)"
+    for expected in "Authority=Developer ID Application" "TeamIdentifier=$TEAM_ID" "(runtime)" "Timestamp="; do
+      if [[ "$details" != *"$expected"* ]]; then
+        echo "error: codesign -dvv output for $component is missing: $expected" >&2
+        exit 1
+      fi
+    done
+  done
+  codesign --verify --strict --deep "$APP"
 else
   codesign --force --deep --options runtime --sign - "$APP"
   codesign --verify --strict "$APP"
