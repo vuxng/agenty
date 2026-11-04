@@ -207,10 +207,11 @@ TEAM="8WJ6LC5Z59"
 NOTARY_PROFILE="agenty-notary"
 
 # ask_default VAR "Prompt" DEFAULT reads a visible value; Enter takes DEFAULT.
+# It goes through the library's ask, which wraps the prompt's colour codes for Readline.
 ask_default() {
-  local var="$1" prompt="$2" default="$3" input
-  read -e -r -p "  $BOLD$prompt$RESET${default:+ [$default]} " input || return 1
-  printf -v "$var" '%s' "${input:-$default}"
+  local var="$1" prompt="$2" default="$3"
+  ask "$var" "$prompt${default:+ [$default]}" || return 1
+  [[ -n "${!var}" ]] || printf -v "$var" '%s' "$default"
 }
 
 # clean_path undoes what dragging a file into Terminal adds (quotes, escaped
@@ -242,13 +243,15 @@ ask_file() {
 # p12_ok PATH: the password in $P12_PASSWORD opens the file, and it holds the
 # team's certificate plus a private key. The password goes through the
 # environment, never the command line.
+# Matches use `grep ... >/dev/null`, not grep -q: under pipefail, grep -q can quit
+# early and the producer then fails with SIGPIPE, turning a match into a failure.
 p12_ok() {
   local file="$1"
   P12_PW="$P12_PASSWORD" /usr/bin/openssl pkcs12 -in "$file" -noout -passin env:P12_PW 2>/dev/null || return 1
   P12_PW="$P12_PASSWORD" /usr/bin/openssl pkcs12 -in "$file" -nokeys -clcerts -passin env:P12_PW 2>/dev/null \
-    | /usr/bin/openssl x509 -noout -subject 2>/dev/null | grep -qF "$TEAM" || return 1
+    | /usr/bin/openssl x509 -noout -subject 2>/dev/null | grep -F "$TEAM" >/dev/null || return 1
   P12_PW="$P12_PASSWORD" /usr/bin/openssl pkcs12 -in "$file" -nocerts -nodes -passin env:P12_PW 2>/dev/null \
-    | grep -q "PRIVATE KEY"
+    | grep "PRIVATE KEY" >/dev/null
 }
 
 # set_env_secret NAME stores stdin as a secret of the release environment.
@@ -290,7 +293,7 @@ if [[ "$(gh repo view "$REPO" --json visibility --jq .visibility 2>/dev/null)" !
 else
   step "$REPO is public."
 fi
-if ! security find-identity -v -p codesigning | grep -qF "$IDENTITY"; then
+if ! security find-identity -v -p codesigning | grep -F "$IDENTITY" >/dev/null; then
   warn "\"$IDENTITY\" is not in your Keychain."
   exit 1
 fi
@@ -333,7 +336,7 @@ for candidate in "$HOME"/Downloads/AuthKey_*.p8; do
 done
 while true; do
   ask_file P8_PATH "Path to the .p8:" "$default_p8"
-  if head -1 "$P8_PATH" | grep -q "BEGIN PRIVATE KEY"; then break; fi
+  if head -1 "$P8_PATH" | grep "BEGIN PRIVATE KEY" >/dev/null; then break; fi
   warn "That file is not a .p8 private key."
 done
 default_key_id="${P8_PATH##*/}"
