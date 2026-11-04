@@ -21,8 +21,11 @@ struct ProviderCard: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            Text(ProviderStyle.glyph(summary.provider))
-                .foregroundStyle(ProviderStyle.color(summary.provider))
+            ProviderStyle.brandLogo(summary.provider)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+                .accessibilityHidden(true) // the provider name follows
             Text(summary.provider.displayName).font(.headline)
             Spacer()
             if case .loading = summary.state, visibleError != nil {

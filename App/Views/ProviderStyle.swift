@@ -2,17 +2,19 @@ import SwiftUI
 import UsageCore
 
 enum ProviderStyle {
-    static func glyph(_ p: ProviderID) -> String {
+    /// Single-color logo that takes the foreground style, for the menu bar.
+    static func logo(_ p: ProviderID) -> Image {
         switch p {
-        case .claude: "✳"
-        case .codex: "◎"
+        case .claude: Image(.claudeLogo)
+        case .codex: Image(.codexLogo)
         }
     }
 
-    static func color(_ p: ProviderID) -> Color {
+    /// The logo in its own brand colors, for the popover.
+    static func brandLogo(_ p: ProviderID) -> Image {
         switch p {
-        case .claude: Color(red: 217 / 255, green: 119 / 255, blue: 87 / 255)
-        case .codex: Color(red: 16 / 255, green: 163 / 255, blue: 127 / 255)
+        case .claude: Image(.claudeBrandLogo)
+        case .codex: Image(.codexBrandLogo)
         }
     }
 }
