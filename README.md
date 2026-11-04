@@ -64,6 +64,8 @@ From 0.2.0 on, Agenty checks for a new version once a day and asks before instal
 brew install xcodegen && xcodegen generate && open Agenty.xcodeproj
 ```
 
+A Debug build, which is what Run in Xcode makes, is **Agenty Dev** (`io.github.vuxng.Agenty.dev`) and shows "DEV" next to its menu bar icon. It has its own settings, login item and permissions, so it runs alongside an installed Agenty without touching it, and it never checks for updates. Release builds keep the official identity, `io.github.vuxng.Agenty`, which updates depend on.
+
 Run the core tests with:
 
 ```sh

@@ -8,16 +8,26 @@ struct MenuBarContent: View {
     let summaries: [ProviderSummary]
     let overall: ProviderSummary?
     let palette: GlyphPalette
+    /// Small text after the glyph, such as "DEV" on Debug builds; nil draws none.
+    var badge: String?
 
     var body: some View {
-        glyph
-            .padding(3)
-            .overlay(alignment: .topTrailing) {
-                if summaries.contains(where: \.hasError) {
-                    Circle().fill(.orange).frame(width: 4, height: 4)
+        HStack(spacing: 1) {
+            glyph
+                .padding(3)
+                .overlay(alignment: .topTrailing) {
+                    if summaries.contains(where: \.hasError) {
+                        Circle().fill(.orange).frame(width: 4, height: 4)
+                    }
                 }
+            if let badge {
+                Text(verbatim: badge)
+                    .font(.system(size: 8, weight: .heavy))
+                    .foregroundStyle(palette.color(for: .normal))
+                    .padding(.trailing, 2)
             }
-            .fixedSize()
+        }
+        .fixedSize()
     }
 
     @ViewBuilder private var glyph: some View {
@@ -31,6 +41,15 @@ struct MenuBarContent: View {
 
 @MainActor
 enum MenuBarRenderer {
+    /// "DEV" on Debug builds ("Agenty Dev"), so they can't be mistaken for the installed Agenty.
+    static let buildBadge: String? = {
+        #if DEBUG
+        return "DEV"
+        #else
+        return nil
+        #endif
+    }()
+
     /// Template only when every summary is normal and none has an error.
     static func isTemplate(_ summaries: [ProviderSummary]) -> Bool {
         summaries.allSatisfy { $0.level == .normal && !$0.hasError }
@@ -40,12 +59,13 @@ enum MenuBarRenderer {
         style: MenuBarStyle,
         summaries: [ProviderSummary],
         overall: ProviderSummary?,
-        colorScheme: ColorScheme
+        colorScheme: ColorScheme,
+        badge: String? = nil
     ) -> NSImage {
         let template = isTemplate(summaries)
         let content = MenuBarContent(
             style: style, summaries: summaries, overall: overall,
-            palette: GlyphPalette(isTemplate: template)
+            palette: GlyphPalette(isTemplate: template), badge: badge
         )
         .environment(\.colorScheme, colorScheme)
 
