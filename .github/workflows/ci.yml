@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [next, stable]
   pull_request:
-    branches: [main]
+    branches: [next, stable]
+
+env:
+  XCODE_APP: /Applications/Xcode_27.2.app
 
 jobs:
   build:
@@ -29,7 +32,7 @@ jobs:
       - name: Select Xcode 27.2
         if: steps.guard.outputs.supported == 'true'
         run: |
-          sudo xcode-select -s /Applications/Xcode_27.2.app
+          sudo xcode-select -s "$XCODE_APP"
           xcodebuild -version
           swift --version
 
@@ -51,3 +54,26 @@ jobs:
           xcodebuild -project Agenty.xcodeproj -scheme Agenty
           -configuration Debug -destination 'platform=macOS,arch=arm64'
           -derivedDataPath build/DerivedData build CODE_SIGNING_ALLOWED=NO
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lint scripts
+        run: shellcheck scripts/*.sh
+
+      - name: Test check-version
+        run: bash scripts/test-check-version.sh
+
+  version-check:
+    # A PR into stable is a release: MARKETING_VERSION must be new and greater than the last tag.
+    if: github.event_name == 'pull_request' && github.base_ref == 'stable'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check release version
+        run: scripts/check-version.sh
