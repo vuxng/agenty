@@ -77,7 +77,67 @@ import Testing
         let http = try okHTTP()
         let c = ClaudeCredential(accessToken: "noexp", expiresAt: nil, subscriptionType: nil)
         _ = try await provider([StaticCredentialSource(c)], http).fetch()
-        #expect(http.requests.count == 1)
+        #expect(http.requests(path: Self.usagePath).count == 1)
+    }
+
+    // MARK: - Account (profile)
+
+    static let usagePath = "/api/oauth/usage"
+    static let profilePath = "/api/oauth/profile"
+
+    func routedHTTP(profileStatus: Int = 200) throws -> FakeHTTPClient {
+        FakeHTTPClient(routes: [
+            Self.usagePath: (200, try fixture("claude-oauth-usage")),
+            Self.profilePath: (profileStatus, profileStatus == 200 ? try fixture("claude-oauth-profile") : Data()),
+        ])
+    }
+
+    @Test func readsAccountEmailFromProfile() async throws {
+        let http = try routedHTTP()
+        let s = try await provider([StaticCredentialSource(fresh)], http).fetch()
+        #expect(s.accountEmail == "user@example.com")
+        let profile = try #require(http.requests(path: Self.profilePath).first)
+        #expect(profile.url?.absoluteString == "https://api.anthropic.com/api/oauth/profile")
+        #expect(profile.value(forHTTPHeaderField: "Authorization") == "Bearer fresh")
+    }
+
+    @Test func profileIsFetchedOncePerToken() async throws {
+        let http = try routedHTTP()
+        let p = provider([StaticCredentialSource(fresh)], http)
+        _ = try await p.fetch()
+        let second = try await p.fetch()
+        #expect(second.accountEmail == "user@example.com")
+        #expect(http.requests(path: Self.usagePath).count == 2)
+        #expect(http.requests(path: Self.profilePath).count == 1)
+    }
+
+    @Test func newTokenRefetchesProfile() async throws {
+        let http = try routedHTTP()
+        let source = MutableCredentialSource(fresh)
+        let p = provider([source], http)
+        _ = try await p.fetch()
+        source.set(ClaudeCredential(accessToken: "rotated", expiresAt: now + 7200, subscriptionType: "max"))
+        _ = try await p.fetch()
+        let profiles = http.requests(path: Self.profilePath)
+        #expect(profiles.map { $0.value(forHTTPHeaderField: "Authorization") } == ["Bearer fresh", "Bearer rotated"])
+    }
+
+    @Test func failedProfileKeepsUsageAndRetriesNextFetch() async throws {
+        let http = try routedHTTP(profileStatus: 500)
+        let p = provider([StaticCredentialSource(fresh)], http)
+        let s = try await p.fetch()
+        #expect(s.accountEmail == nil)
+        #expect(s.windows.count == 1)
+        _ = try await p.fetch()
+        #expect(http.requests(path: Self.profilePath).count == 2)
+    }
+
+    @Test func failedUsageSkipsProfile() async {
+        let http = FakeHTTPClient(status: 401)
+        await #expect(throws: UsageError.tokenExpired) {
+            try await provider([StaticCredentialSource(fresh)], http).fetch()
+        }
+        #expect(http.requests(path: Self.profilePath).isEmpty)
     }
 
     @Test func tieKeepsEarlierSource() async throws {
@@ -93,10 +153,10 @@ import Testing
     }
 
     @Test func http429UsesRetryAfter() async {
-        await expect(.network(retryAfter: .seconds(120)), FakeHTTPClient(status: 429, headers: ["Retry-After": "120"]))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"]))
-        await expect(.network(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "-5"]))
+        await expect(.rateLimited(retryAfter: .seconds(120)), FakeHTTPClient(status: 429, headers: ["Retry-After": "120"]))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"]))
+        await expect(.rateLimited(retryAfter: nil), FakeHTTPClient(status: 429, headers: ["Retry-After": "-5"]))
     }
 
     @Test func http503IsNetwork() async {

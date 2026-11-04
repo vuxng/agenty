@@ -27,6 +27,16 @@
         }
       }
     },
+    "%@ is limiting requests — will retry" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ đang giới hạn số lần gọi — sẽ thử lại"
+          }
+        }
+      }
+    },
     "%@ path" : {
       "localizations" : {
         "vi" : {
@@ -171,12 +181,12 @@
         }
       }
     },
-    "Bars (default)" : {
+    "Bars" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thanh (mặc định)"
+            "value" : "Thanh"
           }
         }
       }
@@ -223,6 +233,16 @@
         }
       }
     },
+    "Checking…" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang kiểm tra…"
+          }
+        }
+      }
+    },
     "Choose path…" : {
       "localizations" : {
         "vi" : {
@@ -263,12 +283,22 @@
         }
       }
     },
-    "Critical at %lld%%" : {
+    "Critical at" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nghiêm trọng ở %lld%%"
+            "value" : "Nghiêm trọng ở"
+          }
+        }
+      }
+    },
+    "Display" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiển thị"
           }
         }
       }
@@ -279,6 +309,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Từng nhà cung cấp"
+          }
+        }
+      }
+    },
+    "Found at %@" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tìm thấy tại %@"
           }
         }
       }
@@ -359,12 +399,12 @@
         }
       }
     },
-    "Menu bar" : {
+    "Menu bar shows" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thanh menu"
+            "value" : "Thanh menu hiển thị"
           }
         }
       }
@@ -395,6 +435,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chưa bật nhà cung cấp nào"
+          }
+        }
+      }
+    },
+    "Not found" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không tìm thấy"
           }
         }
       }
@@ -435,16 +485,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thông báo đã bị tắt trong Cài đặt hệ thống"
-          }
-        }
-      }
-    },
-    "Notify near limits" : {
-      "localizations" : {
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Báo khi gần chạm giới hạn"
           }
         }
       }
@@ -539,6 +579,16 @@
         }
       }
     },
+    "Send notifications" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gửi thông báo"
+          }
+        }
+      }
+    },
     "Session expired — open Claude Code once" : {
       "localizations" : {
         "vi" : {
@@ -559,12 +609,12 @@
         }
       }
     },
-    "Show" : {
+    "Show account email" : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hiển thị"
+            "value" : "Hiển thị email tài khoản"
           }
         }
       }
@@ -641,28 +691,42 @@
         }
       }
     },
-    "Version %@ (%@)" : {
+    "Usage levels" : {
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Version %1$@ (%2$@)"
-          }
-        },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Phiên bản %1$@ (%2$@)"
+            "value" : "Ngưỡng mức dùng"
           }
         }
       }
     },
-    "Warn at %lld%%" : {
+    "Usage turns orange at the warning level and red at the critical level. Notifications are sent at both." : {
       "localizations" : {
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cảnh báo ở %lld%%"
+            "value" : "Mức dùng chuyển sang cam ở mức cảnh báo và đỏ ở mức nghiêm trọng. Thông báo được gửi ở cả hai mức."
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phiên bản"
+          }
+        }
+      }
+    },
+    "Warning at" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cảnh báo ở"
           }
         }
       }
@@ -739,26 +803,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "—"
-          }
-        }
-      }
-    },
-    "✓ Found at %@" : {
-      "localizations" : {
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓ Tìm thấy tại %@"
-          }
-        }
-      }
-    },
-    "✗ Not found" : {
-      "localizations" : {
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✗ Không tìm thấy"
           }
         }
       }

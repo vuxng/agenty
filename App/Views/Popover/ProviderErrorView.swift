@@ -43,6 +43,7 @@ struct ProviderErrorView: View {
         case .keychainDenied: return "Keychain access denied — allow Agenty to read “Claude Code-credentials”"
         case .cliNotFound: return "\(name) CLI not found"
         case .network: return "Can't reach \(name) — will retry"
+        case .rateLimited: return "\(name) is limiting requests — will retry"
         case .unexpectedFormat: return "API format changed"
         }
     }

@@ -16,6 +16,8 @@ public final class UsageStore {
     @ObservationIgnored private var lastSuccessAt: [ProviderID: Date] = [:]
     @ObservationIgnored private var failures: [ProviderID: Int] = [:]
     @ObservationIgnored private var nextAttempt: [ProviderID: Date] = [:]
+    /// After a 429 even a forced refresh waits: asking again only keeps the server's limit tripped.
+    @ObservationIgnored private var rateLimitedUntil: [ProviderID: Date] = [:]
     /// Not ObservationIgnored: views read `displayError`, which depends on it.
     private var lastErrors: [ProviderID: UsageError] = [:]
 
@@ -91,6 +93,7 @@ public final class UsageStore {
                 continue
             }
             if let ok = lastSuccessAt[id], ok.addingTimeInterval(provider.minimumInterval.seconds) > start { continue }
+            if let until = rateLimitedUntil[id], until > start { continue }
             if !force, let next = nextAttempt[id], next > start { continue }
             states[id] = .loading(last: states[id]?.snapshot)
             toFetch.append(provider)
@@ -121,11 +124,15 @@ public final class UsageStore {
         case .failure(let error):
             states[id] = .failed(error, last: last)
             lastErrors[id] = error
-            if case .network(let retryAfter) = error {
-                let n = (failures[id] ?? 0) + 1
-                failures[id] = n
-                let delay = max(retryAfter ?? .zero, Backoff.delay(afterFailures: n, cap: configuration.refreshInterval))
-                nextAttempt[id] = t.addingTimeInterval(delay.seconds)
+            switch error {
+            case .network(let retryAfter):
+                nextAttempt[id] = backOff(id, retryAfter: retryAfter, from: t)
+            case .rateLimited(let retryAfter):
+                let until = backOff(id, retryAfter: retryAfter, from: t)
+                nextAttempt[id] = until
+                rateLimitedUntil[id] = until
+            default:
+                break
             }
         case .success(let snapshot):
             states[id] = .loaded(snapshot)
@@ -141,6 +148,14 @@ public final class UsageStore {
                 await notifier?.deliver(events, snapshot: snapshot)
             }
         }
+    }
+
+    /// Counts one more failure and returns when `id` may be tried again.
+    private func backOff(_ id: ProviderID, retryAfter: Duration?, from t: Date) -> Date {
+        let n = (failures[id] ?? 0) + 1
+        failures[id] = n
+        let delay = max(retryAfter ?? .zero, Backoff.delay(afterFailures: n, cap: configuration.refreshInterval))
+        return t.addingTimeInterval(delay.seconds)
     }
 }
 

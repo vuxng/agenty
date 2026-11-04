@@ -6,6 +6,8 @@ struct ProviderCard: View {
     let store: UsageStore
     var onRetryKeychain: @MainActor () -> Void = {}
 
+    @AppStorage(SettingsKey.showAccountEmail) private var showAccountEmail = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
@@ -20,9 +22,26 @@ struct ProviderCard: View {
     }
 
     private var header: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            titleRow
+            if showAccountEmail, let email = summary.state.snapshot?.accountEmail {
+                Text(email)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.leading, 20) // lines up with the provider name, past the 14 pt logo + 6 pt gap
+            }
+        }
+    }
+
+    private var titleRow: some View {
         HStack(spacing: 6) {
-            Text(ProviderStyle.glyph(summary.provider))
-                .foregroundStyle(ProviderStyle.color(summary.provider))
+            ProviderStyle.brandLogo(summary.provider)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+                .accessibilityHidden(true) // the provider name follows
             Text(summary.provider.displayName).font(.headline)
             Spacer()
             if case .loading = summary.state, visibleError != nil {
@@ -38,11 +57,15 @@ struct ProviderCard: View {
         }
     }
 
-    /// Network errors with a last snapshot show no row (the footer turns orange instead).
+    /// Network and rate-limit errors with a last snapshot show no row (the footer turns orange instead).
     private var visibleError: UsageError? {
         guard let error = summary.displayError else { return nil }
-        if case .network = error, summary.state.snapshot != nil { return nil }
-        return error
+        switch error {
+        case .network, .rateLimited:
+            return summary.state.snapshot == nil ? error : nil
+        default:
+            return error
+        }
     }
 
     @ViewBuilder private var content: some View {
