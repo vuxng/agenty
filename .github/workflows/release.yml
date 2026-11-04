@@ -116,6 +116,23 @@ jobs:
           fi
           xcrun stapler validate "$RUNNER_TEMP/verify/Agenty.app"
 
+      # The same notes GitHub would generate; they go to both the release and the appcast.
+      - name: Generate release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes"
+          -f tag_name="v$VERSION" -f target_commitish="$GITHUB_SHA" --jq .body > build/notes.md
+
+      # Only this step sees the Sparkle key; make-appcast.sh reads it from stdin and checks the
+      # signature against the app's SUPublicEDKey before writing build/appcast.xml.
+      - name: Make appcast
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: printf '%s' "$SPARKLE_ED_PRIVATE_KEY" | scripts/make-appcast.sh "$VERSION"
+
       - name: Publish release
         env:
           VERSION: ${{ steps.version.outputs.version }}

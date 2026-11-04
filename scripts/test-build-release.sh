@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2016  # run_case checks are single-quoted on purpose: run_case evals them in the case root.
 # Tests for scripts/build-release.sh against a fake toolchain (xcodegen, xcodebuild, codesign,
 # lipo, ditto, xcrun, spctl). Nothing is built or signed. Needs macOS (plutil, shasum).
 set -euo pipefail
@@ -19,15 +20,25 @@ EOF
   cat > "$bin/xcodebuild" <<'EOF'
 #!/bin/bash
 echo "$*" > "$FAKE_LOG/xcodebuild.args"
-mkdir -p build/DerivedData/Build/Products/Release/Agenty.app/Contents/MacOS
-touch build/DerivedData/Build/Products/Release/Agenty.app/Contents/MacOS/Agenty
+app=build/DerivedData/Build/Products/Release/Agenty.app
+mkdir -p "$app/Contents/MacOS"
+touch "$app/Contents/MacOS/Agenty"
+sparkle="$app/Contents/Frameworks/Sparkle.framework/Versions/B"
+mkdir -p "$sparkle/XPCServices/Installer.xpc" "$sparkle/XPCServices/Downloader.xpc" "$sparkle/Updater.app"
+touch "$sparkle/Autoupdate"
 echo "** BUILD SUCCEEDED **"
 EOF
+  # Logs every call. -dvv leaves out Timestamp= for paths containing $FAKE_NO_TIMESTAMP.
   cat > "$bin/codesign" <<'EOF'
 #!/bin/bash
+echo "$*" >> "$FAKE_LOG/codesign"
+path="${*: -1}"
 for arg in "$@"; do
   if [ "$arg" = "-dvv" ]; then
-    printf 'Authority=Developer ID Application: Test (%s)\nTeamIdentifier=%s\nCodeDirectory v=20500 flags=0x10000(runtime)\nTimestamp=Nov 4, 2026\n' "$TEAM_ID" "$TEAM_ID" >&2
+    printf 'Authority=Developer ID Application: Test (%s)\nTeamIdentifier=%s\nCodeDirectory v=20500 flags=0x10000(runtime)\n' "$TEAM_ID" "$TEAM_ID" >&2
+    if [ -z "${FAKE_NO_TIMESTAMP:-}" ] || [[ "$path" != *"$FAKE_NO_TIMESTAMP"* ]]; then
+      echo "Timestamp=Nov 4, 2026" >&2
+    fi
   fi
 done
 EOF
@@ -104,6 +115,30 @@ run_case notarization_rejected_fails_with_log 1 "notarization failed with status
   '[ -e log/notarytool-log.called ]' \
   SIGN_IDENTITY="$IDENTITY" TEAM_ID=TEAM123456 NOTARY_KEY_PATH=key.p8 NOTARY_KEY_ID=ABC NOTARY_ISSUER_ID=x \
   FAKE_NOTARY_STATUS=Invalid
+
+# Signing calls (codesign -f -s ...), for the checks below.
+signs() { grep -e '-f -s ' log/codesign || true; }
+signed_names() { signs | awk '{print $NF}' | sed 's|.*/||' | paste -sd ' ' -; }
+DEVID=(SIGN_IDENTITY="$IDENTITY" TEAM_ID=TEAM123456)
+
+run_case devid_signs_sparkle_inside_out 0 "" \
+  '[ "$(signed_names)" = "Installer.xpc Downloader.xpc Autoupdate Updater.app Sparkle.framework Agenty.app" ]' \
+  "${DEVID[@]}"
+run_case devid_signing_never_uses_deep 0 "" \
+  '[ -n "$(signs)" ] && [ -z "$(signs | grep -e --deep)" ]' "${DEVID[@]}"
+run_case devid_signing_uses_runtime_and_timestamp 0 "" \
+  '[ -n "$(signs)" ] && [ -z "$(signs | grep -v -e "-o runtime")" ] && [ -z "$(signs | grep -v -e --timestamp)" ]' \
+  "${DEVID[@]}"
+run_case devid_signing_uses_keychain_when_set 0 "" \
+  '[ -n "$(signs)" ] && [ -z "$(signs | grep -v -e "--keychain k.keychain-db")" ]' \
+  "${DEVID[@]}" SIGN_KEYCHAIN=k.keychain-db
+run_case downloader_keeps_its_entitlements 0 "" \
+  '[[ "$(signs | grep -e "Downloader.xpc$")" == *"--preserve-metadata=entitlements"* ]]' "${DEVID[@]}"
+run_case helper_without_timestamp_fails_before_notarizing 1 "Autoupdate is missing: Timestamp=" \
+  '[ ! -e log/notarytool-submit.args ]' \
+  "${DEVID[@]}" NOTARY_KEYCHAIN_PROFILE=p FAKE_NO_TIMESTAMP=Autoupdate
+run_case adhoc_does_not_sign_helpers_one_by_one 0 "" \
+  '[ -s log/codesign ] && [ -z "$(signs | grep -e Installer.xpc)" ]'
 
 echo "$passed passed, $failed failed"
 [ "$failed" = 0 ]

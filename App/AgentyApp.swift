@@ -6,7 +6,7 @@ struct AgentyApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            UsagePopover(store: model.store, onRetryKeychain: model.retryKeychainAccess)
+            UsagePopover(store: model.store, onRetryKeychain: model.retryKeychainAccess, updater: model.updater)
         } label: {
             MenuBarLabel(store: model.store)
         }

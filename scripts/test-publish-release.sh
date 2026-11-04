@@ -19,6 +19,8 @@ run_case() {
   cp "$SCRIPT" "$root/scripts/publish-release.sh"
   : > "$root/build/Agenty-0.2.0-arm64.zip"
   : > "$root/build/Agenty-0.2.0-arm64.zip.sha256"
+  : > "$root/build/appcast.xml"
+  echo "notes" > "$root/build/notes.md"
   cat > "$root/bin/gh" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$FAKE_LOG/gh"
@@ -45,8 +47,8 @@ EOF
   rm -rf "$root"
 }
 
-run_case publishes_both_assets_at_the_commit 0 \
-  'grep -qx "release create v0.2.0 build/Agenty-0.2.0-arm64.zip build/Agenty-0.2.0-arm64.zip.sha256 --target abc123 --title Agenty 0.2.0 --generate-notes" log/gh && ! grep -q "release delete" log/gh'
+run_case publishes_zip_checksum_and_appcast 0 \
+  'grep -qx "release create v0.2.0 build/Agenty-0.2.0-arm64.zip build/Agenty-0.2.0-arm64.zip.sha256 build/appcast.xml --target abc123 --title Agenty 0.2.0 --notes-file build/notes.md" log/gh && ! grep -q "release delete" log/gh'
 run_case failed_upload_deletes_the_draft 1 \
   'grep -qx "release delete v0.2.0 --yes" log/gh' \
   FAKE_CREATE_EXIT=1 FAKE_VIEW_OUT=true

@@ -4,6 +4,8 @@ import UsageCore
 struct UsagePopover: View {
     let store: UsageStore
     var onRetryKeychain: @MainActor () -> Void = {}
+    /// nil in previews.
+    var updater: Updater?
 
     var body: some View {
         let summaries = store.summaries
@@ -14,6 +16,9 @@ struct UsagePopover: View {
                 ForEach(summaries) { summary in
                     ProviderCard(summary: summary, store: store, onRetryKeychain: onRetryKeychain)
                 }
+            }
+            if let updater, let version = updater.availableVersion {
+                UpdateBanner(version: version) { updater.checkForUpdates() }
             }
             PopoverFooter(store: store, isStale: summaries.contains(where: \.isStale))
         }

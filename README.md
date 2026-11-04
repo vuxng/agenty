@@ -54,6 +54,10 @@ To check the download, put the `.sha256` file from the same release next to the 
 shasum -a 256 -c Agenty-<version>-arm64.zip.sha256
 ```
 
+### Updates
+
+From 0.2.0 on, Agenty checks for a new version once a day and asks before installing it. You can turn the daily check off, or check now, in Settings › Updates. If you are on 0.1.x, download 0.2.0 by hand once; later versions arrive by themselves.
+
 ## Build from source
 
 ```sh
@@ -82,6 +86,7 @@ Build a release zip with `scripts/build-release.sh <version>`; the result is in 
 - To release, raise `MARKETING_VERSION` in `project.yml` on `next`, open a pull request from `next` to `stable`, and merge it with a merge commit. CI then signs and notarizes the app and publishes the `vX.Y.Z` release. The `version-check` job blocks the pull request if that version is already released.
 - For a hotfix, branch off `stable`, raise the patch version, and merge into `stable`. Then open a pull request from `stable` to `next` so the fix comes back.
 - Maintainers set up the signing secrets once with `scripts/setup-release-secrets.sh`.
+- Each release also carries `appcast.xml`, the feed the app reads from `releases/latest/download/appcast.xml`. It is signed with the Sparkle EdDSA key in the `SPARKLE_ED_PRIVATE_KEY` secret, and the release fails if that key does not match `SUPublicEDKey` in `project.yml`. Keep a copy of the key outside the Keychain. If it is lost, installed copies can no longer be updated: generate a new key, ship a release with the new `SUPublicEDKey`, and users must download that release by hand.
 
 ## License
 
