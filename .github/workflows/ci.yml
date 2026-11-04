@@ -8,9 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # `xcode-27` is GitHub's preview image (macOS 27, arm64). `macos-latest` is still macOS 26,
+    # which cannot run a macOS 27 deployment target. Switch back to `macos-latest` once it is 27.
+    runs-on: xcode-27
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check macOS version
         id: guard
@@ -23,6 +25,13 @@ jobs:
           else
             echo "supported=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Select Xcode 27.2
+        if: steps.guard.outputs.supported == 'true'
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.2.app
+          xcodebuild -version
+          swift --version
 
       - name: Test UsageCore
         if: steps.guard.outputs.supported == 'true'
