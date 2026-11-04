@@ -8,7 +8,7 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 
 ## Features
 
-- Menu-bar glyph in three styles (bars, a single ring, or one per provider) so you can see at a glance whether a limit is close.
+- Menu-bar glyph in three styles (bars, a single ring, or each provider's logo with its percentage) so you can see at a glance whether a limit is close.
 - Popover with every window, its percentage and its reset time.
 - Notifications at 80% and 95% (configurable) and when a limit resets.
 - Launch at login and a configurable refresh interval.
@@ -64,7 +64,7 @@ From 0.2.0 on, Agenty checks for a new version once a day and asks before instal
 brew install xcodegen && xcodegen generate && open Agenty.xcodeproj
 ```
 
-A Debug build, which is what Run in Xcode makes, is **Agenty Dev** (`io.github.vuxng.Agenty.dev`) and shows "DEV" next to its menu bar icon. It has its own settings, login item and permissions, so it runs alongside an installed Agenty without touching it, and it never checks for updates. Release builds keep the official identity, `io.github.vuxng.Agenty`, which updates depend on.
+A Debug build, which is what Run in Xcode makes, is **Agenty Dev** (`io.github.vuxng.Agenty.dev`) and shows "DEV" in the popover footer. It has its own settings, login item and permissions, so it runs alongside an installed Agenty without touching it, and it never checks for updates. Release builds keep the official identity, `io.github.vuxng.Agenty`, which updates depend on.
 
 Run the core tests with:
 
@@ -93,3 +93,5 @@ Build a release zip with `scripts/build-release.sh <version>`; the result is in 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+The Claude and Codex logos in `App/Assets.xcassets` are trademarks of Anthropic and OpenAI. They are not covered by the MIT license, and Agenty is not affiliated with or endorsed by either company. The SVG paths come from [lobehub/lobe-icons](https://github.com/lobehub/lobe-icons) (MIT).
