@@ -53,7 +53,7 @@ public struct ClaudeProvider: UsageProvider {
             let windows = try ClaudeUsageParser.windows(from: data)
             return UsageSnapshot(
                 provider: .claude,
-                plan: credential.subscriptionType,
+                plan: credential.plan,
                 windows: windows,
                 credits: nil,
                 fetchedAt: now()
