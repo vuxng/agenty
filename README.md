@@ -1,3 +1,5 @@
+<img src="docs/images/icon.png" width="128" alt="Agenty icon">
+
 # Agenty
 
 A small macOS menu-bar app that shows how much of your Claude and Codex subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset.
