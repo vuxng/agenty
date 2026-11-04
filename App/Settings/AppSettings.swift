@@ -5,7 +5,13 @@ enum MenuBarStyle: String, CaseIterable {
     case bars, single, perProvider
 }
 
+/// A toolbar pane of the settings window.
+enum SettingsPane: String {
+    case general, providers, notifications
+}
+
 enum SettingsKey {
+    static let settingsPane = "settingsPane"
     static let menuBarStyle = "menuBarStyle"
     static let refreshMinutes = "refreshMinutes"
     static let notificationsEnabled = "notificationsEnabled"
