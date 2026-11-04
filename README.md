@@ -12,6 +12,7 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 - Popover with every window, its percentage and its reset time.
 - Notifications at 80% and 95% (configurable) and when a limit resets.
 - Launch at login and a configurable refresh interval.
+- Optionally, the email of the signed-in account on each provider card (Settings › General, off by default).
 - English and Vietnamese UI.
 
 ## Supported providers
@@ -28,11 +29,11 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 
 ## Warning: unofficial APIs
 
-Agenty relies on endpoints and methods that are not public, documented APIs: `/api/oauth/usage` (Claude) and `codex app-server` (Codex). They can change or break at any time without notice.
+Agenty relies on endpoints and methods that are not public, documented APIs: `/api/oauth/usage` and `/api/oauth/profile` (Claude), and `codex app-server` (Codex). They can change or break at any time without notice.
 
 ## Privacy
 
-- Your tokens never leave your machine, except in the single request sent to `api.anthropic.com` to read your Claude usage.
+- Your tokens never leave your machine, except in the requests sent to `api.anthropic.com` to read your Claude usage and your account email. The email is fetched again only when Agenty starts or Claude Code renews its token, and it is fetched even when the Settings toggle hides it.
 - The app never refreshes tokens. Claude Code refreshes its own login; if it has expired, open Claude Code once.
 - The app never reads `~/.codex/auth.json`. Codex is queried only through its own CLI, which manages its own credentials.
 - The app never sends prompts to any model.

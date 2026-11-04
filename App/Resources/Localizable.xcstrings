@@ -569,6 +569,16 @@
         }
       }
     },
+    "Show account email" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiển thị email tài khoản"
+          }
+        }
+      }
+    },
     "Updated %@" : {
       "localizations" : {
         "vi" : {

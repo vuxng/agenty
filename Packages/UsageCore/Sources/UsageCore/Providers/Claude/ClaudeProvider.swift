@@ -1,15 +1,18 @@
 import Foundation
 import os
+import Synchronization
 
 public struct ClaudeProvider: UsageProvider {
     public let id: ProviderID = .claude
 
     private static let endpoint = URL(string: "https://api.anthropic.com/api/oauth/usage")!
+    private static let profileEndpoint = URL(string: "https://api.anthropic.com/api/oauth/profile")!
     private static let log = Logger(subsystem: "io.github.vuxng.Agenty", category: "claude")
 
     private let sources: [any CredentialSource]
     private let http: any HTTPClient
     private let now: @Sendable () -> Date
+    private let profileCache = ProfileCache()
 
     public init(
         sources: [any CredentialSource],
@@ -28,19 +31,11 @@ public struct ClaudeProvider: UsageProvider {
             throw keychainDenied ? .keychainDenied : .tokenExpired
         }
 
-        var request = URLRequest(url: Self.endpoint)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 15
-        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        request.setValue("Bearer \(credential.accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
         let started = ContinuousClock.now
         let data: Data
         let response: HTTPURLResponse
         do {
-            (data, response) = try await http.data(for: request)
+            (data, response) = try await http.data(for: Self.request(Self.endpoint, token: credential.accessToken))
         } catch {
             Self.log.error("claude request failed after \(started.duration(to: .now), privacy: .public)")
             throw .network(retryAfter: nil)
@@ -56,7 +51,8 @@ public struct ClaudeProvider: UsageProvider {
                 plan: credential.plan,
                 windows: windows,
                 credits: nil,
-                fetchedAt: now()
+                fetchedAt: now(),
+                accountEmail: await accountEmail(token: credential.accessToken)
             )
         case 401, 403:
             throw .tokenExpired
@@ -67,6 +63,39 @@ public struct ClaudeProvider: UsageProvider {
         default:
             throw .unexpectedFormat("HTTP \(status)")
         }
+    }
+
+    /// Fetched once per access token. A failed lookup is retried on the next fetch and never fails the snapshot.
+    private func accountEmail(token: String) async -> String? {
+        if let cached = profileCache.lookup(token) { return cached.email }
+        guard let (data, response) = try? await http.data(for: Self.request(Self.profileEndpoint, token: token)) else {
+            Self.log.notice("claude profile request failed")
+            return nil
+        }
+        guard response.statusCode == 200 else {
+            Self.log.notice("claude profile status \(response.statusCode, privacy: .public)")
+            return nil
+        }
+        let email = Self.email(fromProfile: data)
+        profileCache.store(ProfileCache.Entry(token: token, email: email))
+        return email
+    }
+
+    private static func email(fromProfile data: Data) -> String? {
+        let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        guard let email = (root?["account"] as? [String: Any])?["email"] as? String, !email.isEmpty else { return nil }
+        return email
+    }
+
+    private static func request(_ url: URL, token: String) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        return request
     }
 
     /// Largest `expiresAt` wins, `nil` sorts lowest, ties keep the earlier source.
@@ -104,4 +133,17 @@ public struct ClaudeProvider: UsageProvider {
               let seconds = Int(raw) else { return nil }
         return .seconds(seconds)
     }
+}
+
+/// The profile email for the last access token seen, so `/api/oauth/profile` is hit once per token.
+private final class ProfileCache: Sendable {
+    struct Entry {
+        let token: String
+        let email: String?
+    }
+
+    private let entry = Mutex<Entry?>(nil)
+
+    func lookup(_ token: String) -> Entry? { entry.withLock { $0?.token == token ? $0 : nil } }
+    func store(_ new: Entry) { entry.withLock { $0 = new } }
 }

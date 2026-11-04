@@ -6,6 +6,8 @@ struct ProviderCard: View {
     let store: UsageStore
     var onRetryKeychain: @MainActor () -> Void = {}
 
+    @AppStorage(SettingsKey.showAccountEmail) private var showAccountEmail = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
@@ -20,6 +22,20 @@ struct ProviderCard: View {
     }
 
     private var header: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            titleRow
+            if showAccountEmail, let email = summary.state.snapshot?.accountEmail {
+                Text(email)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.leading, 20) // lines up with the provider name, past the 14 pt logo + 6 pt gap
+            }
+        }
+    }
+
+    private var titleRow: some View {
         HStack(spacing: 6) {
             ProviderStyle.brandLogo(summary.provider)
                 .resizable()

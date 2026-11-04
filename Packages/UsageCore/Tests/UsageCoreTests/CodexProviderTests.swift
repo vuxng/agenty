@@ -26,9 +26,12 @@ import Testing
         switch msg["method"] {
         case .string("initialize"): return [#"{"id":1,"result":{}}"#]
         case .string("account/rateLimits/read"): return [resultLine]
+        case .string("account/read"): return [accountLine]
         default: return []
         }
     }
+
+    private static let accountLine = #"{"id":3,"result":{"account":{"type":"chatgpt","email":"user@example.com","planType":"pro"},"requiresOpenaiAuth":true}}"#
 
     @Test func handshakeOrderAndParams() async throws {
         let ch = ScriptedChannel { Self.respond($0) }
@@ -37,10 +40,14 @@ import Testing
         #expect(snap.provider == .codex)
         #expect(snap.windows == [UsageWindow(kind: .session5h, usedPercent: 42, resetsAt: Date(timeIntervalSince1970: 100))])
         #expect(snap.fetchedAt == Date(timeIntervalSince1970: 7))
-        #expect(ch.sent.map { $0["method"] } == [.string("initialize"), .string("initialized"), .string("account/rateLimits/read")])
+        #expect(ch.sent.map { $0["method"] } == [.string("initialize"), .string("initialized"),
+                                                .string("account/rateLimits/read"), .string("account/read")])
         #expect(ch.sent[0]["params"] == .object(["clientInfo": .object([
             "name": .string("agenty"), "title": .string("Agenty"), "version": .string("0.1.0")])]))
         #expect(ch.sent[2]["params"] == .object(["excludeResetCreditDetails": .bool(true)]))
+        try #require(ch.sent.count == 4)
+        #expect(ch.sent[3]["params"] == .object([:]))
+        #expect(snap.accountEmail == "user@example.com")
         #expect(ch.sent.allSatisfy { $0["jsonrpc"] == nil })
         #expect(ch.inputFinished)
         #expect(runner.executable?.path == Self.path)
@@ -64,6 +71,25 @@ import Testing
         }
         let snap = try await provider(ch).0.fetch()
         #expect(snap.plan == "pro")
+    }
+
+    @Test func accountReadErrorStillReturnsSnapshot() async throws {
+        let ch = ScriptedChannel { msg in
+            switch msg["method"] {
+            case .string("account/read"): return [#"{"id":3,"error":{"code":-32000,"message":"Not logged in"}}"#]
+            default: return Self.respond(msg)
+            }
+        }
+        let snap = try await provider(ch).0.fetch()
+        #expect(snap.windows.count == 1)
+        #expect(snap.accountEmail == nil)
+    }
+
+    @Test func accountReadWithoutReplyStillReturnsSnapshot() async throws {
+        let ch = ScriptedChannel { msg in msg["method"] == .string("account/read") ? [] : Self.respond(msg) }
+        let snap = try await provider(ch).0.fetch()
+        #expect(snap.accountEmail == nil)
+        #expect(ch.inputFinished)
     }
 
     @Test func cliMissingIsCliNotFound() async {

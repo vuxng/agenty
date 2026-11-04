@@ -13,6 +13,7 @@ enum SettingsKey {
     static let criticalThreshold = "criticalThreshold"
     static let notifyOnReset = "notifyOnReset"
     static let didRequestNotificationPermission = "didRequestNotificationPermission"
+    static let showAccountEmail = "showAccountEmail"
 
     static func providerEnabled(_ id: ProviderID) -> String { "provider.\(id.rawValue).enabled" }
     static func providerPath(_ id: ProviderID) -> String { "provider.\(id.rawValue).path" }
@@ -31,6 +32,7 @@ enum AppDefaults {
             SettingsKey.criticalThreshold: 95,
             SettingsKey.notifyOnReset: true,
             SettingsKey.didRequestNotificationPermission: false,
+            SettingsKey.showAccountEmail: false, // off by default: the popover may be on a shared screen
         ]
         for id in ProviderID.allCases {
             values[SettingsKey.providerEnabled(id)] = true
