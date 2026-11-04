@@ -7,6 +7,9 @@ options:
 packages:
   UsageCore:
     path: Packages/UsageCore
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
 targets:
   Agenty:
     type: application
@@ -14,6 +17,7 @@ targets:
     sources: [App]
     dependencies:
       - package: UsageCore
+      - package: Sparkle
     info:
       path: App/Info.plist
       properties:
@@ -21,6 +25,9 @@ targets:
         CFBundleDisplayName: Agenty
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        SUFeedURL: https://github.com/vuxng/agenty/releases/latest/download/appcast.xml
+        SUEnableAutomaticChecks: true
+        SUPublicEDKey: VSzgrFXaXPBnifZoaF6tUenSC/Elaacp/IVhDdSJ3hs=
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.vuxng.Agenty
