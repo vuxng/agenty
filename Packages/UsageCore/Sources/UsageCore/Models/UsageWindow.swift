@@ -14,6 +14,13 @@ public struct UsageWindow: Sendable, Hashable {
     /// `usedPercent` as a 0...1 fraction, clamped.
     public var fraction: Double { min(max(usedPercent / 100, 0), 1) }
 
+    /// Whether both windows reset within the same minute, the finest unit the UI shows.
+    /// The server's timestamps for one reset can differ by a fraction of a second.
+    public func sharesReset(with other: UsageWindow) -> Bool {
+        guard let resetsAt, let otherResetsAt = other.resetsAt else { return false }
+        return abs(resetsAt.timeIntervalSince(otherResetsAt)) < 60
+    }
+
     /// Highest `usedPercent`; ties go to the later `resetsAt` (nil counts as earliest).
     public static func mostConstrained(in windows: [UsageWindow]) -> UsageWindow? {
         windows.reduce(nil) { best, w in

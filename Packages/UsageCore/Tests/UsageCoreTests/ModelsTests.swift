@@ -28,6 +28,22 @@ import Testing
         #expect(UsageWindow(kind: .weekly, usedPercent: 45, resetsAt: nil).fraction == 0.45)
     }
 
+    @Test func sharesResetIgnoresSubMinuteDifferences() throws {
+        // The fixture's weekly and Fable rows are one reset, 0.65s apart.
+        let w = try ClaudeUsageParser.windows(from: fixture("claude-oauth-usage"))
+        #expect(w[1].sharesReset(with: w[0]))
+    }
+
+    @Test func sharesResetIsFalseForDifferentOrMissingResets() {
+        let t = Date(timeIntervalSince1970: 1_000)
+        let a = UsageWindow(kind: .weekly, usedPercent: 1, resetsAt: t)
+        let later = UsageWindow(kind: .weeklyModel("Fable"), usedPercent: 1, resetsAt: t.addingTimeInterval(60))
+        let none = UsageWindow(kind: .weeklyModel("Opus"), usedPercent: 1, resetsAt: nil)
+        #expect(!a.sharesReset(with: later))
+        #expect(!a.sharesReset(with: none))
+        #expect(!none.sharesReset(with: none))
+    }
+
     @Test func usageLevelBoundaries() {
         let t = Thresholds()
         #expect(UsageLevel.of(79.9, thresholds: t) == .normal)
