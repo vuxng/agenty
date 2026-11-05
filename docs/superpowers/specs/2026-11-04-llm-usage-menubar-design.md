@@ -176,7 +176,7 @@ anthropic-beta: oauth-2025-04-20
 | `weekly_scoped` | `.weeklyModel(scope.model.display_name)` | `percent` | `resets_at` |
 | kind khác | bỏ qua (log tên kind) | | |
 
-Row có `is_active == false` thì bỏ qua.
+Không lọc theo `is_active`: cờ này chỉ đánh dấu row headline của server, các row còn lại vẫn là meter hợp lệ.
 
 *Fallback* (chỉ dùng khi response không có `limits`): `five_hour` → `.session5h`,
 `seven_day` → `.weekly`, `seven_day_opus` → `.weeklyModel("Opus")`,
@@ -352,7 +352,7 @@ Tiếng Anh làm gốc, thêm tiếng Việt qua String Catalog (`Localizable.xc
 - Các test bắt buộc:
   - Parse fixture Claude và Codex (`docs/superpowers/spikes/fixtures/*.json`, sẽ copy vào
     `Tests/UsageCoreTests/Fixtures/`) ra `UsageSnapshot` đúng. Claude cần thêm các biến thể:
-    có row `session`; `is_active: false`; chỉ có field cũ (không có `limits`); kind lạ;
+    có row `session`; row `is_active: false` vẫn được giữ; chỉ có field cũ (không có `limits`); kind lạ;
     key tên mã lạ.
   - Codex JSON-RPC: có notification xen trước response, và các message không có `"jsonrpc"`.
   - Ánh xạ `windowDurationMins` → `WindowKind`, gồm cả `primary = weekly, secondary = nil`.

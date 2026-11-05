@@ -4,6 +4,7 @@ import UsageCore
 struct WindowRow: View {
     let window: UsageWindow
     let level: UsageLevel
+    let showsReset: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -11,7 +12,7 @@ struct WindowRow: View {
                 Text("\(Text(Formatting.title(window.kind))) · \(Int(window.usedPercent.rounded()))%")
                     .font(.subheadline.weight(.medium))
                 Spacer()
-                if let resetsAt = window.resetsAt {
+                if showsReset, let resetsAt = window.resetsAt {
                     TimelineView(.everyMinute) { context in
                         Text(Formatting.reset(.make(resetsAt: resetsAt, now: context.date), now: context.date))
                             .font(.caption)
