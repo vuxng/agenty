@@ -38,7 +38,9 @@ Response có một mảng `limits` có cấu trúc. Schema trong Claude Code ghi
 - `kind`: `session` (5 giờ), `weekly_all`, `weekly_scoped` (theo model, tên lấy từ `scope.model.display_name`).
 - **Lúc chạy spike không có row `session`**, và `five_hour` cũng `null`. App **không được giả định**
   luôn có cửa sổ 5 giờ.
-- `is_active: false` thì meter chưa áp dụng. v1 ẩn các row này.
+- `is_active` đánh dấu row headline mà server chọn cho chỉ báo một giá trị, không cho biết meter có áp dụng
+  hay không. Row `is_active: false` vẫn là meter hợp lệ và app hiển thị chúng. (Đính chính 2026-11-06:
+  ban đầu ghi nhầm là "meter chưa áp dụng".)
 - Field cũ `five_hour`, `seven_day`, `seven_day_opus`, `seven_day_sonnet` vẫn có (`{utilization, resets_at}`),
   dùng làm **fallback** khi không có `limits`.
 - Response có rất nhiều key mang tên mã nội bộ (`iguana_necktie`, `tangelo`, `amber_*`…). **Bỏ qua.**

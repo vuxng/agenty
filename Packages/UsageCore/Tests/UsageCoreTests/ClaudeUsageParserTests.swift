@@ -5,8 +5,8 @@ import Testing
 @Suite struct ClaudeUsageParserTests {
     @Test func parsesRealFixture() throws {
         let w = try ClaudeUsageParser.windows(from: fixture("claude-oauth-usage"))
-        #expect(w.count == 1)   // weekly_scoped "Fable" is_active=false is dropped
-        #expect(w[0].kind == .weekly && w[0].usedPercent == 13)
+        #expect(w.map(\.kind) == [.weekly, .weeklyModel("Fable")])
+        #expect(w[0].usedPercent == 13)
         #expect(abs(w[0].resetsAt!.timeIntervalSince1970 - 1_793_822_400.652364) < 0.001)
     }
 
@@ -24,12 +24,18 @@ import Testing
         #expect(w.map(\.usedPercent) == [45, 62, 84])
     }
 
-    @Test func skipsInactiveRows() throws {
+    /// `is_active` marks the server's headline row, not whether a meter applies.
+    @Test func keepsRowsThatAreNotTheHeadline() throws {
         let json = #"""
         {"limits":[
-          {"kind":"weekly_all","percent":62,"resets_at":"2026-11-05T09:00:00+00:00","is_active":false,"scope":null}]}
+          {"kind":"session","percent":45,"resets_at":"2026-11-04T16:00:00+00:00","is_active":false,"scope":null},
+          {"kind":"weekly_all","percent":62,"resets_at":"2026-11-05T09:00:00+00:00","is_active":true,"scope":null},
+          {"kind":"weekly_scoped","percent":84,"resets_at":"2026-11-05T09:00:00+00:00","is_active":false,
+           "scope":{"model":{"id":null,"display_name":"Fable"},"surface":null}}]}
         """#
-        #expect(try ClaudeUsageParser.windows(from: Data(json.utf8)).isEmpty)
+        let w = try ClaudeUsageParser.windows(from: Data(json.utf8))
+        #expect(w.map(\.kind) == [.session5h, .weekly, .weeklyModel("Fable")])
+        #expect(w.map(\.usedPercent) == [45, 62, 84])
     }
 
     @Test func emptyLimitsIsEmpty() throws {

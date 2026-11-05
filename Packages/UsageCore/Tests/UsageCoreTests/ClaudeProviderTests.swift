@@ -47,7 +47,7 @@ import Testing
         let s = try await provider([StaticCredentialSource(fresh)], try okHTTP()).fetch()
         #expect(s.provider == .claude)
         #expect(s.plan == "max")
-        #expect(s.windows.count == 1)
+        #expect(s.windows.count == 2)
         #expect(s.fetchedAt == now)
         #expect(s.credits == nil)
     }
@@ -127,7 +127,7 @@ import Testing
         let p = provider([StaticCredentialSource(fresh)], http)
         let s = try await p.fetch()
         #expect(s.accountEmail == nil)
-        #expect(s.windows.count == 1)
+        #expect(s.windows.count == 2)
         _ = try await p.fetch()
         #expect(http.requests(path: Self.profilePath).count == 2)
     }
