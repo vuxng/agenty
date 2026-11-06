@@ -1190,6 +1190,262 @@
           }
         }
       }
+    },
+    "Agenty can't write this file: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty can't write this file: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty không thể ghi tệp này: %@"
+          }
+        }
+      }
+    },
+    "Another config overrides these settings: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Another config overrides these settings: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Một cấu hình khác ghi đè các thiết lập này: %@"
+          }
+        }
+      }
+    },
+    "Codex CLI not found. Choose its path to use Controls." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex CLI not found. Choose its path to use Controls."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không tìm thấy Codex CLI. Chọn đường dẫn để dùng Điều khiển."
+          }
+        }
+      }
+    },
+    "Config" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Config"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cấu hình"
+          }
+        }
+      }
+    },
+    "Config file" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Config file"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp cấu hình"
+          }
+        }
+      }
+    },
+    "Config mode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Config mode"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chế độ cấu hình"
+          }
+        }
+      }
+    },
+    "Controls" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controls"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Điều khiển"
+          }
+        }
+      }
+    },
+    "Effort was reset for the selected model." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effort was reset for the selected model."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mức suy luận đã được đặt lại cho mô hình đã chọn."
+          }
+        }
+      }
+    },
+    "File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        }
+      }
+    },
+    "Invalid config file: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid config file: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp cấu hình không hợp lệ: %@"
+          }
+        }
+      }
+    },
+    "Invalid config value: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid config value: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giá trị cấu hình không hợp lệ: %@"
+          }
+        }
+      }
+    },
+    "Open File" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open File"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở File"
+          }
+        }
+      }
+    },
+    "Save changes before switching modes?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save changes before switching modes?"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lưu thay đổi trước khi chuyển chế độ?"
+          }
+        }
+      }
+    },
+    "This Codex CLI doesn't support Controls. Update Codex or edit the file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Codex CLI doesn't support Controls. Update Codex or edit the file."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex CLI này không hỗ trợ Điều khiển. Hãy cập nhật Codex hoặc chỉnh sửa tệp."
+          }
+        }
+      }
+    },
+    "This file hasn't been checked." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file hasn't been checked."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp này chưa được kiểm tra."
+          }
+        }
+      }
+    },
+    "Your unsaved config changes will be lost if you discard them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your unsaved config changes will be lost if you discard them."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Các thay đổi cấu hình chưa lưu sẽ bị mất nếu bạn loại bỏ chúng."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

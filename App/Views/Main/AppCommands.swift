@@ -8,10 +8,10 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .saveItem) {
             Button("Save") {
-                model.instructions[model.selectedInstructions]?.save()
+                model.instructions[model.selectedProvider]?.save()
             }
             .keyboardShortcut("s", modifiers: .command)
-            .disabled(page != .instructions || model.instructions[model.selectedInstructions]?.isDirty != true)
+            .disabled(page != .instructions || model.instructions[model.selectedProvider]?.isDirty != true)
         }
 
         CommandGroup(after: .toolbar) {

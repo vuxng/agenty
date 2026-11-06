@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let failed = dirtyDocuments.first(where: {
                 $0.saveError != nil || $0.hasConflict || $0.loadError != nil || $0.isDirty
             }) {
-                model.selectedInstructions = failed.file.provider
+                model.selectedProvider = failed.file.provider
                 UserDefaults.standard.set(AppPage.instructions.rawValue, forKey: SettingsKey.mainPage)
                 instructionsSaveFailed.send()
                 return .terminateCancel

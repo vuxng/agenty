@@ -10,12 +10,12 @@ struct InstructionsPage: View {
 
     var body: some View {
         Group {
-            if let document = model.instructions[model.selectedInstructions] {
+            if let document = model.instructions[model.selectedProvider] {
                 manuscript(document)
             }
         }
         .onAppear { refresh() }
-        .onChange(of: model.selectedInstructions) {
+        .onChange(of: model.selectedProvider) {
             editorIsFocused = false
             refresh()
         }
@@ -25,9 +25,10 @@ struct InstructionsPage: View {
     }
 
     private func manuscript(_ document: InstructionsDocument) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        @Bindable var model = model
+        return VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                providerSelector
+                ProviderSelector(selection: $model.selectedProvider)
                 Text(verbatim: document.file.fileName)
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,33 +88,6 @@ struct InstructionsPage: View {
         }
     }
 
-    private var providerSelector: some View {
-        HStack(spacing: 4) {
-            ForEach(ProviderID.allCases, id: \.self) { provider in
-                let selected = model.selectedInstructions == provider
-                Button { model.selectedInstructions = provider } label: {
-                    HStack(spacing: 8) {
-                        ProviderStyle.brandLogo(provider)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
-                        Text(verbatim: provider.displayName)
-                            .font(.callout.weight(selected ? .semibold : .regular))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(selected
-                                ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .capsule)
-                    .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(4)
-        .glassEffect(.regular, in: .capsule)
-    }
-
     private func editor(_ document: InstructionsDocument) -> some View {
         @Bindable var document = document
         return InstructionsEditor(text: $document.draft, tint: ProviderStyle.tint(document.file.provider))
@@ -144,7 +118,7 @@ struct InstructionsPage: View {
     }
 
     private func refresh() {
-        model.instructions[model.selectedInstructions]?.refresh()
+        model.instructions[model.selectedProvider]?.refresh()
     }
 
     private func showInFinder(_ url: URL) {
