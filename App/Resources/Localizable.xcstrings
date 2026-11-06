@@ -135,6 +135,22 @@
         }
       }
     },
+    "Agenty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty"
+          }
+        }
+      }
+    },
     "Agenty %@ is available" : {
       "localizations" : {
         "en" : {
@@ -147,6 +163,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đã có Agenty %@"
+          }
+        }
+      }
+    },
+    "Agenty can't read this file: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty can't read this file: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty không đọc được file này: %@"
           }
         }
       }
@@ -283,6 +315,22 @@
         }
       }
     },
+    "Critical" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Critical"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nguy cấp"
+          }
+        }
+      }
+    },
     "Critical at" : {
       "localizations" : {
         "vi" : {
@@ -355,6 +403,32 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cài đặt…"
+          }
+        }
+      }
+    },
+    "Instructions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instructions"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chỉ dẫn"
+          }
+        }
+      }
+    },
+    "Instructions Markdown" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chỉ dẫn Markdown"
           }
         }
       }
@@ -505,6 +579,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "Open Agenty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Agenty"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở Agenty"
           }
         }
       }
@@ -673,6 +763,12 @@
     },
     "Usage" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage"
+          }
+        },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
@@ -717,6 +813,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phiên bản"
+          }
+        }
+      }
+    },
+    "Warning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cảnh báo"
           }
         }
       }
@@ -803,6 +915,278 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "—"
+          }
+        }
+      }
+    },
+    "Applies to new sessions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies to new sessions"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Áp dụng cho phiên mới"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Huỷ"
+          }
+        }
+      }
+    },
+    "Changed outside Agenty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changed outside Agenty"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã thay đổi bên ngoài Agenty"
+          }
+        }
+      }
+    },
+    "Codex is using AGENTS.override.md, so it ignores this file." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex is using AGENTS.override.md, so it ignores this file."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Codex đang dùng AGENTS.override.md nên bỏ qua file này."
+          }
+        }
+      }
+    },
+    "Couldn't save: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't save: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể lưu: %@"
+          }
+        }
+      }
+    },
+    "Discard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bỏ thay đổi"
+          }
+        }
+      }
+    },
+    "Keep Mine" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Mine"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giữ bản của tôi"
+          }
+        }
+      }
+    },
+    "Reload" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reload"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải lại"
+          }
+        }
+      }
+    },
+    "Revert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Revert"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoàn nguyên"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lưu"
+          }
+        }
+      }
+    },
+    "Save changes before quitting?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save changes before quitting?"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lưu thay đổi trước khi thoát?"
+          }
+        }
+      }
+    },
+    "Show in Finder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Finder"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiện trong Finder"
+          }
+        }
+      }
+    },
+    "This file doesn't exist yet. Agenty creates it when you save." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file doesn't exist yet. Agenty creates it when you save."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File này chưa tồn tại. Agenty sẽ tạo khi bạn lưu."
+          }
+        }
+      }
+    },
+    "This file isn't plain text, so Agenty can't edit it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file isn't plain text, so Agenty can't edit it."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File này không phải văn bản thuần nên Agenty không thể chỉnh sửa."
+          }
+        }
+      }
+    },
+    "Try Again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thử lại"
+          }
+        }
+      }
+    },
+    "Unsaved changes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsaved changes"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thay đổi chưa lưu"
+          }
+        }
+      }
+    },
+    "Your unsaved instruction changes will be lost if you discard them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your unsaved instruction changes will be lost if you discard them."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Những thay đổi hướng dẫn chưa lưu sẽ bị mất nếu bạn bỏ thay đổi."
           }
         }
       }

@@ -6,6 +6,8 @@ struct PopoverFooter: View {
     let store: UsageStore
     let isStale: Bool
 
+    @Environment(\.openWindow) private var openWindow
+
     /// "DEV" on Debug builds ("Agenty Dev"), so they can't be mistaken for the installed Agenty.
     private static let buildBadge: String? = {
         #if DEBUG
@@ -41,6 +43,14 @@ struct PopoverFooter: View {
                 }
                 .accessibilityLabel(Text("Refresh"))
                 .help(Text("Refresh"))
+                Button {
+                    openWindow(id: "main")
+                    NSApp.activate()
+                } label: {
+                    FooterIcon(systemName: "macwindow")
+                }
+                .accessibilityLabel(Text("Open Agenty"))
+                .help(Text("Open Agenty"))
                 SettingsLink { FooterIcon(systemName: "gearshape") }
                     .accessibilityLabel(Text("Settings"))
                     .help(Text("Settings"))

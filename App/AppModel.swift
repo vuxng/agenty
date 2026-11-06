@@ -9,6 +9,8 @@ final class AppModel {
     let locator: CLILocator
     let notifier = UserNotifier()
     let updater = Updater()
+    let instructions: [ProviderID: InstructionsDocument]
+    var selectedInstructions: ProviderID = .claude
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let loop: RefreshLoop
@@ -21,6 +23,9 @@ final class AppModel {
         // Writing to a closed child pipe must fail with EPIPE, never kill the app with SIGPIPE.
         signal(SIGPIPE, SIG_IGN)
         let home = FileManager.default.homeDirectoryForCurrentUser
+        self.instructions = Dictionary(uniqueKeysWithValues: ProviderID.allCases.map { provider in
+            (provider, InstructionsDocument(file: InstructionsFile(provider: provider, home: home)))
+        })
         let runner = SubprocessRunner()
         let locator = CLILocator(home: home, shell: ZshLoginShellLookup(runner: runner))
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
