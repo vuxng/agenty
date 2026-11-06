@@ -23,19 +23,27 @@ struct ConfigPluginCard: View {
                 let filtered = config.plugins.filter { search.isEmpty || $0.name.localizedStandardContains(search) }
                 ForEach(showingAll ? filtered : Array(filtered.prefix(8))) { plugin in
                     if let path = plugin.path {
-                        Toggle(isOn: Binding(
-                            get: { isEnabled(plugin) },
-                            set: { document.set(.bool($0), at: path) }
-                        )) {
+                        HStack(spacing: 8) {
                             Text(verbatim: plugin.name)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Toggle(isOn: Binding(
+                                get: { isEnabled(plugin) },
+                                set: { document.set(.bool($0), at: path) }
+                            )) {
+                                Text(verbatim: plugin.name)
+                            }
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
                         }
-                        .toggleStyle(.switch)
+                        .frame(minHeight: 20)
                     } else {
                         HStack(spacing: 8) {
                             Text(verbatim: plugin.name)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Text("Synced").font(.caption)
                         }
+                        .frame(minHeight: 20)
                         .foregroundStyle(.secondary)
                         .opacity(0.55)
                     }

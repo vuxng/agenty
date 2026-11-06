@@ -13,11 +13,17 @@ struct ConfigModelCard: View {
                 }
                 if let fast = config.fast, document.isFastAvailable {
                     VStack(alignment: .leading, spacing: 8) {
-                        Toggle("Fast", isOn: Binding(
-                            get: { document.value(at: fast.path) == fast.onValue },
-                            set: { document.set($0 ? fast.onValue : nil, at: fast.path) }
-                        ))
-                        .toggleStyle(.switch)
+                        HStack(spacing: 8) {
+                            Text("Fast")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Toggle("Fast", isOn: Binding(
+                                get: { document.value(at: fast.path) == fast.onValue },
+                                set: { document.set($0 ? fast.onValue : nil, at: fast.path) }
+                            ))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                        }
                         .disabled(fast.lockedValue != nil)
                         if let locked = fast.lockedValue {
                             Text("Set to \(locked). Change it in File mode.")
