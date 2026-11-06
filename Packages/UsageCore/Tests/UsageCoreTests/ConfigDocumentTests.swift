@@ -29,6 +29,32 @@ import Testing
         }
     }
 
+    @Test func failedReloadKeepsDraftProtection() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: permission, value: .string("bypassPermissions"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.failure(.readFailed("reload failed")))
+            await document.refresh(force: true)
+            #expect(document.config == Self.config())
+            #expect(document.dangerousEdits == [edit])
+            #expect(document.loadError == .readFailed("reload failed"))
+            await document.save()
+            #expect(await backend.saveCalls.isEmpty)
+            #expect(document.saveError == .readFailed("reload failed"))
+            #expect(document.edits == [edit])
+            #expect(document.isDirty)
+
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await document.refresh(force: true)
+            #expect(document.loadError == nil)
+            await document.save()
+            #expect(await backend.saveCalls == [.init(edits: [edit], version: "v2")])
+            #expect(document.saveError == nil)
+            #expect(!document.isDirty)
+        }
+    }
+
     @Test func brokenFileStillOpensInFileMode() async throws {
         try await withDocument(content: "{broken") { backend, document in
             await backend.setLoadResult(.failure(.invalidFile("broken")))
@@ -226,6 +252,46 @@ import Testing
         }
     }
 
+    @Test(arguments: [false, true])
+    func saveDuringRefreshWaitsAndSaves(afterSave: Bool) async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            if afterSave { document.set(.bool(true), at: ["fast"]) }
+            await backend.setLoadResult(.success(.init(
+                config: Self.config(values: [["fast"]: .bool(afterSave)]), version: "v2"
+            )))
+            await backend.blockLoad()
+            let refreshing = Task {
+                if afterSave { await document.save() }
+                else { await document.refresh(force: true) }
+            }
+            await backend.waitForLoad()
+            document.set(.string("low"), at: effort.path)
+            var saveFinished = false
+            var saving: Task<Void, Never>?
+            await withCheckedContinuation { started in
+                saving = Task { @MainActor in
+                    started.resume()
+                    await document.save()
+                    saveFinished = true
+                }
+            }
+            #expect(!saveFinished)
+            #expect(await backend.saveCalls.count == (afterSave ? 1 : 0))
+            await backend.releaseLoad()
+            await refreshing.value
+            await saving?.value
+            var expected: [FakeConfigBackend.SaveCall] = []
+            if afterSave {
+                expected.append(.init(edits: [.init(path: ["fast"], value: .bool(true))], version: "v1"))
+            }
+            expected.append(.init(edits: [.init(path: effort.path, value: .string("low"))], version: "v2"))
+            #expect(await backend.saveCalls == expected)
+            #expect(!document.isDirty)
+            #expect(document.saveError == nil)
+        }
+    }
+
     @Test func refreshDuringSaveIsIgnored() async throws {
         try await withDocument { backend, document in
             await document.refresh()
@@ -334,14 +400,30 @@ import Testing
         }
     }
 
+    @Test func emptyEffortsResetsLevel() async throws {
+        try await withDocument { _, document in
+            await document.refresh()
+            document.selectModel("no-efforts")
+            #expect(document.currentModel?.id == "no-efforts")
+            #expect(document.value(at: effort.path) == nil)
+            #expect(document.levels(for: effort).isEmpty)
+            #expect(document.edits == [
+                .init(path: ["model"], value: .string("no-efforts")),
+                .init(path: effort.path, value: nil),
+            ])
+            #expect(document.notice == .effortReset)
+        }
+    }
+
     @Test func unknownEffortStaysInLevels() async throws {
         try await withDocument(config: Self.config(values: [["effort"]: .string("turbo")])) { _, document in
             await document.refresh()
             #expect(document.levels(for: effort) == ["low", "ultra", "turbo"])
-            document.selectModel("no-efforts")
+            document.selectModel("unknown-efforts")
             #expect(document.value(at: ["effort"]) == .string("turbo"))
             #expect(document.levels(for: effort) == ["turbo"])
-            #expect(document.edits == [.init(path: ["model"], value: .string("no-efforts"))])
+            #expect(document.edits == [.init(path: ["model"], value: .string("unknown-efforts"))])
+            #expect(document.notice == nil)
         }
     }
 
@@ -451,6 +533,7 @@ import Testing
                 ModelOption(id: "full", displayName: "Full", isDefault: true, efforts: ["low", "ultra"], fastDescription: "Fast"),
                 ModelOption(id: "basic", displayName: "Basic", isDefault: false, efforts: ["low"], fastDescription: nil),
                 ModelOption(id: "no-efforts", displayName: "No efforts", isDefault: false, efforts: [], fastDescription: nil),
+                ModelOption(id: "unknown-efforts", displayName: "Unknown efforts", isDefault: false, efforts: nil, fastDescription: nil),
             ], allowsCustom: true),
             efforts: [EffortSetting(path: ["effort"], modelName: nil, levels: nil)],
             fast: FastSetting(path: ["fast"], onValue: .bool(true), lockedValue: nil, requiresModelTier: true),

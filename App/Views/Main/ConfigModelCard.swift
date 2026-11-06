@@ -17,6 +17,7 @@ struct ConfigModelCard: View {
                             get: { document.value(at: fast.path) == fast.onValue },
                             set: { document.set($0 ? fast.onValue : nil, at: fast.path) }
                         ))
+                        .toggleStyle(.switch)
                         .disabled(fast.lockedValue != nil)
                         if let locked = fast.lockedValue {
                             Text("Set to \(locked). Change it in File mode.")

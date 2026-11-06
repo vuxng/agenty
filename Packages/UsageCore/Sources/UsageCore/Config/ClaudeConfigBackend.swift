@@ -25,7 +25,7 @@ public struct ClaudeConfigBackend: ConfigBackend {
             modelNames.append(model)
         }
         let model = ModelSetting(path: ["model"], options: modelNames.map {
-            ModelOption(id: $0, displayName: $0, isDefault: $0 == "best", efforts: levels, fastDescription: nil)
+            ModelOption(id: $0, displayName: $0, isDefault: $0 == "best", efforts: nil, fastDescription: nil)
         }, allowsCustom: true)
         var efforts: [EffortSetting] = []
         if case .object(let members) = root.value(at: ["modelSettings"]) {
@@ -80,6 +80,9 @@ public struct ClaudeConfigBackend: ConfigBackend {
     }
 
     public func validate(_ text: String) async throws(ConfigError) -> ConfigValidation {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw .invalidFile("Expected a JSON object")
+        }
         _ = try Self.parse(text)
         return .valid
     }

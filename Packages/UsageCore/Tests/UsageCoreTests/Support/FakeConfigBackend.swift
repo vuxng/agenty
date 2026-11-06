@@ -16,6 +16,9 @@ actor FakeConfigBackend: ConfigBackend {
     private var loadResult: Result<ConfigSnapshot, ConfigError>
     private var saveResult: Result<ConfigSaveResult, ConfigError> = .success(.init(overrideMessage: nil))
     private var validationResult: Result<ConfigValidation, ConfigError> = .success(.valid)
+    private var loadIsBlocked = false
+    private var loadGate: CheckedContinuation<Void, Never>?
+    private var loadStarted: CheckedContinuation<Void, Never>?
     private var saveIsBlocked = false
     private var saveGate: CheckedContinuation<Void, Never>?
     private var saveStarted: CheckedContinuation<Void, Never>?
@@ -31,6 +34,19 @@ actor FakeConfigBackend: ConfigBackend {
     func setLoadResult(_ result: Result<ConfigSnapshot, ConfigError>) { loadResult = result }
     func setSaveResult(_ result: Result<ConfigSaveResult, ConfigError>) { saveResult = result }
     func setValidationResult(_ result: Result<ConfigValidation, ConfigError>) { validationResult = result }
+
+    func blockLoad() { loadIsBlocked = true }
+
+    func waitForLoad() async {
+        if loadGate != nil { return }
+        await withCheckedContinuation { loadStarted = $0 }
+    }
+
+    func releaseLoad() {
+        loadIsBlocked = false
+        loadGate?.resume()
+        loadGate = nil
+    }
 
     func blockSave() { saveIsBlocked = true }
 
@@ -60,6 +76,13 @@ actor FakeConfigBackend: ConfigBackend {
 
     func load() async throws(ConfigError) -> ConfigSnapshot {
         loadCount += 1
+        if loadIsBlocked {
+            await withCheckedContinuation {
+                loadGate = $0
+                loadStarted?.resume()
+                loadStarted = nil
+            }
+        }
         return try loadResult.get()
     }
 

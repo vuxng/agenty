@@ -21,6 +21,7 @@ public final class ConfigDocument {
     private var version: String?
     private var hasLoaded = false
     private var isRefreshing = false
+    private var refreshWaiters: [CheckedContinuation<Void, Never>] = []
 
     public var isDirty: Bool {
         switch mode {
@@ -70,9 +71,9 @@ public final class ConfigDocument {
         notice = nil
         guard let config else { return }
         set(id.map(ConfigValue.string), at: config.model.path)
-        guard let model = currentModel, !model.efforts.isEmpty else { return }
+        guard let efforts = currentModel?.efforts else { return }
         for setting in config.efforts where setting.levels == nil {
-            if case .string(let level) = value(at: setting.path), !model.efforts.contains(level) {
+            if case .string(let level) = value(at: setting.path), !efforts.contains(level) {
                 set(nil, at: setting.path)
                 notice = .effortReset
             }
@@ -114,8 +115,11 @@ public final class ConfigDocument {
     }
 
     public func save() async {
+        while isRefreshing {
+            await withCheckedContinuation { refreshWaiters.append($0) }
+        }
         notice = nil
-        guard !isSaving, !isRefreshing else { return }
+        guard !isSaving else { return }
         saveError = nil
         isSaving = true
         defer { isSaving = false }
@@ -123,6 +127,10 @@ public final class ConfigDocument {
             let savedNotice: ConfigNotice?
             switch mode {
             case .controls:
+                if let loadError {
+                    saveError = loadError
+                    return
+                }
                 let submittedEdits = edits
                 let result = try await backend.save(submittedEdits, version: version)
                 edits.removeAll { submittedEdits.contains($0) }
@@ -198,6 +206,9 @@ public final class ConfigDocument {
         defer {
             isRefreshing = false
             isLoading = false
+            let waiters = refreshWaiters
+            refreshWaiters.removeAll()
+            for waiter in waiters { waiter.resume() }
         }
         hasLoaded = true
         do {
@@ -206,8 +217,6 @@ public final class ConfigDocument {
             version = snapshot.version
             loadError = nil
         } catch {
-            config = nil
-            version = nil
             loadError = error
         }
     }

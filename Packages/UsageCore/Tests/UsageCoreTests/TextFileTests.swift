@@ -27,9 +27,10 @@ import Testing
         try file.write("settings 📝\r\n")
         #expect(try Data(contentsOf: file.url) == Data("settings 📝\r\n".utf8))
         #expect(try file.read() == "settings 📝\r\n")
+        #expect(try FileManager.default.attributesOfItem(atPath: file.url.path)[.posixPermissions] as? Int == 0o600)
     }
 
-    @Test func writeKeepsPermissions() throws {
+    @Test(arguments: [0o600, 0o644]) func writeKeepsPermissions(originalMode: Int) throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer {
@@ -41,11 +42,11 @@ import Testing
         }
         let file = TextFile(url: directory.appendingPathComponent("settings.txt"))
         try Data("old".utf8).write(to: file.url)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.url.path)
+        try FileManager.default.setAttributes([.posixPermissions: originalMode], ofItemAtPath: file.url.path)
         try file.write("new")
         let attributes = try FileManager.default.attributesOfItem(atPath: file.url.path)
         let mode = try #require(attributes[.posixPermissions] as? NSNumber).intValue
-        #expect(mode == 0o600)
+        #expect(mode == originalMode)
         #expect(try Data(contentsOf: file.url) == Data("new".utf8))
     }
 }

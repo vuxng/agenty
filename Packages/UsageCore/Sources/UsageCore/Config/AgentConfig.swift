@@ -39,10 +39,10 @@ public struct ModelOption: Sendable, Equatable, Identifiable {
     public let id: String
     public let displayName: String
     public let isDefault: Bool
-    public let efforts: [String]
+    public let efforts: [String]?
     public let fastDescription: String?
 
-    public init(id: String, displayName: String, isDefault: Bool, efforts: [String], fastDescription: String?) {
+    public init(id: String, displayName: String, isDefault: Bool, efforts: [String]?, fastDescription: String?) {
         self.id = id
         self.displayName = displayName
         self.isDefault = isDefault

@@ -29,6 +29,7 @@ import UsageCore
             "best", "fable", "opus", "sonnet", "haiku", "opus[1m]", "sonnet[1m]", "opusplan",
         ])
         #expect(snapshot.config.model.allowsCustom)
+        #expect(snapshot.config.model.options.allSatisfy { $0.efforts == nil })
         #expect(snapshot.config.efforts == [
             EffortSetting(path: ["effortLevel"], modelName: nil, levels: ["low", "medium", "high", "xhigh"]),
         ])
@@ -265,7 +266,7 @@ import UsageCore
 
     @Test func validateRejectsBrokenJSON() async throws {
         let (backend, _) = backend()
-        for text in ["{", "[]", "null", "false", "1", "\"model\""] {
+        for text in ["", " \t\r\n", "{", "[]", "null", "false", "1", "\"model\""] {
             do {
                 _ = try await backend.validate(text)
                 Issue.record("Expected invalidFile for \(text)")
@@ -273,7 +274,7 @@ import UsageCore
                 guard case .invalidFile = error else { Issue.record(error); continue }
             }
         }
-        for text in ["", "{}", "{\"model\":\"opus\"}"] {
+        for text in ["{}", "{\"model\":\"opus\"}"] {
             #expect(try await backend.validate(text) == .valid)
         }
         #expect(!FileManager.default.fileExists(atPath: backend.file.url.path))

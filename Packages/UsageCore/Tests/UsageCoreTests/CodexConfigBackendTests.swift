@@ -109,6 +109,7 @@ import UsageCore
         let channel = try loadChannel(nextCursor: "page-two")
         let config = try await backend(channel).0.load().config
         #expect(config.model.options.map(\.id) == ["gpt-test", "second-model"])
+        #expect(config.model.options.last?.efforts == [])
         let calls = channel.sent.filter { $0["method"] == .string("model/list") }
         #expect(calls.map { $0["params"] } == [.object([:]), .object(["cursor": .string("page-two")])])
     }
@@ -116,7 +117,7 @@ import UsageCore
     @Test func unlistedModelIsAppended() async throws {
         let config = try await backend(loadChannel(userConfig: .object(["model": .string("custom-model")]))).0.load().config
         #expect(config.model.options.last == ModelOption(id: "custom-model", displayName: "custom-model",
-                                                         isDefault: false, efforts: [], fastDescription: nil))
+                                                         isDefault: false, efforts: nil, fastDescription: nil))
     }
 
     @Test func loadKeepsOnlyInstalledPlugins() async throws {

@@ -78,7 +78,7 @@ git commit -m "docs: add the Config page spec and plan"
 
 - [ ] **Step 1: Viết test `@Suite struct TextFileTests`**
 
-`missingFileReadsNil`, `writeCreatesParentDirectories`, và `writeKeepsPermissions`: tạo file quyền `0o600`, gọi `write`, rồi `#expect(mode == 0o600)`.
+`missingFileReadsNil`, `writeCreatesParentDirectories` (file mới có quyền `0o600`), và `writeKeepsPermissions`: file có sẵn quyền `0o600` hoặc `0o644` giữ nguyên quyền sau `write`. Tạo file tạm quyền `0o600` trước khi ghi nội dung.
 
 - [ ] **Step 2: Chạy `--filter TextFileTests`, mong đợi FAIL vì chưa có `TextFile`**
 
@@ -213,7 +213,7 @@ Message: `feat: add an order-preserving JSON document`
   }
   public struct ModelOption: Sendable, Equatable, Identifiable {
       public let id: String; public let displayName: String; public let isDefault: Bool
-      public let efforts: [String]; public let fastDescription: String?
+      public let efforts: [String]?; public let fastDescription: String? // nil = chưa biết, [] = không hỗ trợ mức nào
   }
   public struct ModelSetting: Sendable, Equatable { public let path: ConfigPath; public let options: [ModelOption]; public let allowsCustom: Bool }
   public struct EffortSetting: Sendable, Equatable {
@@ -258,7 +258,7 @@ Message: `feat: add an order-preserving JSON document`
 
 Giá trị cố định của Claude:
 - `file` là `<home>/.claude/settings.json`. Tìm CLI bằng `locate("claude", override: nil)`, vì app chỉ có đường dẫn tuỳ chỉnh cho Codex.
-- `model.options`: `best`, `fable`, `opus`, `sonnet`, `haiku`, `opus[1m]`, `sonnet[1m]`, `opusplan`, `allowsCustom: true`. Giá trị trong file không có trong danh sách thì thêm vào cuối.
+- `model.options`: `best`, `fable`, `opus`, `sonnet`, `haiku`, `opus[1m]`, `sonnet[1m]`, `opusplan`, `allowsCustom: true`, mọi option có `efforts: nil`. Giá trị trong file không có trong danh sách thì thêm vào cuối.
 - Effort: mỗi mục `modelSettings.<m>` có `effortLevel` cho một `EffortSetting(modelName: m)`, rồi `EffortSetting(path: ["effortLevel"], modelName: nil)`. Levels `["low","medium","high","xhigh"]`.
 - `fast`: path `["fastMode"]`, `onValue: .bool(true)`, `requiresModelTier: false`.
 - Choice 1: `.claudePermission`, path `["permissions","defaultMode"]`, options theo bảng 3.3 của spec, `dangerous: [.string("bypassPermissions")]`, `unsetAliases: [.string("default"), .string("manual")]`.
@@ -284,7 +284,7 @@ Dùng thư mục tạm, `FakeProcessRunner` và `ScriptedChannel(lines:)` trả 
 | `saveChangesOnlyEditedKeys` | Sửa `model`, xoá `effortLevel`: các key khác và thứ tự giữ nguyên, file kết thúc bằng `\n` |
 | `saveDetectsConflict` | `version` khác nội dung đĩa ném `.conflict`, file không đổi |
 | `saveCreatesMissingFile` | `version == nil`, file chưa có: tạo file |
-| `validateRejectsBrokenJSON` | JSON lỗi và gốc không phải object ném `.invalidFile`. JSON đúng và chuỗi rỗng trả về `.valid` |
+| `validateRejectsBrokenJSON` | JSON lỗi, gốc không phải object, chuỗi rỗng hoặc chỉ có khoảng trắng ném `.invalidFile`. JSON object đúng trả về `.valid`; `load` vẫn chấp nhận file 0 byte |
 
 - [ ] **Step 2: Chạy `--filter ClaudeConfigBackendTests`, mong đợi FAIL**
 
@@ -321,7 +321,7 @@ Giá trị cố định:
 - `load` chạy trong một phiên: `config/read` với `{"includeLayers": true}`, `model/list` với `{}`, `plugin/installed` với `{}`. Dùng `plugin/installed`, không dùng `plugin/list`.
 - `model/list` có phân trang: còn `nextCursor` thì gọi tiếp với `{"cursor": nextCursor}`.
 - Giá trị lấy từ `layers[]` có `name.type == "user"`: `config` và `version`.
-- `ModelOption`: `id` là `model`, `displayName`, `isDefault`, `efforts` từ `supportedReasoningEfforts[].reasoningEffort`, `fastDescription` từ `serviceTiers[0].description`. `model.path` là `["model"]`, `allowsCustom: false`. Giá trị trong file không có trong danh sách thì thêm vào cuối với `efforts` rỗng.
+- `ModelOption`: `id` là `model`, `displayName`, `isDefault`, `efforts` từ `supportedReasoningEfforts[].reasoningEffort`, `fastDescription` từ `serviceTiers[0].description`. `model.path` là `["model"]`, `allowsCustom: false`. Giá trị trong file không có trong danh sách thì thêm vào cuối với `efforts: nil` (chưa biết); danh sách hỗ trợ rỗng từ API vẫn là `[]`.
 - `EffortSetting(path: ["model_reasoning_effort"], modelName: nil, levels: nil)`.
 - `fast`: path `["service_tier"]`, `onValue: .string("priority")`, `requiresModelTier: true`. Giá trị khác `priority` và `default` thì đặt `lockedValue`.
 - Choice: `.codexSandbox` path `["sandbox_mode"]`, `dangerous: [.string("danger-full-access")]`. `.codexApproval` path `["approval_policy"]`, `dangerous: [.string("never")]`. Options theo bảng 3.3. `approval_policy` là bảng thì đọc ra `.opaque("granular")` và thêm vào `options`.
@@ -437,12 +437,12 @@ Quy tắc:
 - `set` thay edit cùng path. Giá trị bằng trên đĩa thì bỏ edit, nên chỉnh rồi chỉnh lại thì hết dirty. Với `ConfigChoice`, `nil` và các `unsetAliases` được coi là bằng nhau khi so.
 - `isDirty`: chế độ Điều khiển là `!edits.isEmpty`, chế độ File là `fileDraft != (diskText ?? "")`.
 - `dangerousEdits`: edit có giá trị nằm trong `dangerous` của một `ConfigChoice` và khác giá trị trên đĩa.
-- `selectModel`: đặt `model.path`, rồi với từng `EffortSetting` có `levels == nil`: nếu `currentModel` có `efforts` và không chứa mức hiện tại, thêm edit xoá key đó và đặt `notice = .effortReset`. Thanh có `levels` riêng, như của Claude, không bị đụng tới.
-- `levels(for:)` dùng `setting.levels`, không có thì lấy `currentModel.efforts`. `value(at:)` không nằm trong danh sách thì thêm vào cuối, để giá trị lạ vẫn hiện và không bị đổi.
+- `selectModel`: đặt `model.path`, rồi với từng `EffortSetting` có `levels == nil`: nếu `currentModel.efforts != nil` (kể cả `[]`) và không chứa mức hiện tại, thêm edit xoá key đó và đặt `notice = .effortReset`. Thanh có `levels` riêng, như của Claude, không bị đụng tới.
+- `levels(for:)` dùng `setting.levels`, không có thì lấy `currentModel.efforts`, coi `nil` là danh sách rỗng. `value(at:)` không nằm trong danh sách thì thêm vào cuối, để giá trị lạ vẫn hiện và không bị đổi.
 - `isFastAvailable`: có `config.fast`, và `requiresModelTier == false` hoặc `currentModel?.fastDescription != nil`.
 - `refresh`: bỏ qua khi `isSaving` hoặc `isLoading`. Đọc `backend.file.read()`. Nội dung đổi khi có nháp thì đặt `hasConflict` và dừng. Nội dung đổi khi không có nháp, hoặc `force`, hoặc chưa tải lần nào, thì cập nhật `diskText`, `fileDraft` nếu không có nháp, rồi `backend.load()`. Còn lại thì dừng.
-- `load` lỗi vẫn giữ `diskText` và `fileDraft`, để file lỗi sửa được ở chế độ File. `isLoading` chỉ làm hiện vòng xoay khi `config == nil`.
-- `save` ở chế độ Điều khiển: `backend.save(edits, version:)`. `.conflict` đặt `hasConflict`. Lỗi khác đặt `saveError`, giữ nháp. Thành công thì xoá `edits`, `refresh(force: true)`, đặt `notice = .overridden` nếu có message.
+- `load` lỗi chỉ đặt `loadError`, giữ `config`, version và nháp cũ, cùng `diskText` và `fileDraft` để sửa ở chế độ File. Lần đầu tải lỗi vẫn chưa có `config`; lần tải thành công tiếp theo xoá `loadError` và cập nhật version. `isLoading` chỉ làm hiện vòng xoay khi `config == nil`.
+- `save` chờ lần refresh đang chạy kết thúc (kể cả đọc lại sau lưu), không tắt nút Lưu vì refresh. Ở chế độ Điều khiển, nếu có `loadError` thì đặt `saveError` bằng lỗi đó, giữ nháp và không gọi backend; còn lại gọi `backend.save(edits, version:)`. `.conflict` đặt `hasConflict`. Lỗi khác đặt `saveError`, giữ nháp. Thành công thì xoá `edits`, `refresh(force: true)`, đặt `notice = .overridden` nếu có message.
 - `save` ở chế độ File: đọc lại file, khác `diskText` thì đặt `hasConflict`. Rồi `backend.validate`, `writeFile`, `refresh(force: true)`. `.unchecked` đặt `notice = .fileNotChecked`.
 - `revert`: xoá `edits`, `fileDraft = diskText ?? ""`.
 - `keepMine`: đọc lại `diskText` và `load`, giữ nguyên `edits` và `fileDraft`, xoá `hasConflict`.
@@ -474,8 +474,8 @@ Quy tắc:
 | `refreshDuringSaveIsIgnored` | Chặn `save`, gọi `refresh()`, mở gate: không có `hasConflict`, không mất nháp |
 | `dangerousEditsOnlyWhenNew` | Disk đã là `bypassPermissions`: rỗng. Đổi từ `plan` sang đó: có một edit |
 | `modelChangeResetsUnsupportedEffort` | `ultra` với model không hỗ trợ: có edit xoá key, `notice == .effortReset` |
-| `fixedLevelsSurviveModelChange` | `EffortSetting` có `levels` riêng và option có `efforts` rỗng, như Claude: `selectModel` không xoá mức suy luận |
-| `unknownEffortStaysInLevels` | Disk `turbo`: `levels(for:)` có `turbo`, sau `selectModel` sang model không có `efforts` thì key không bị đụng |
+| `fixedLevelsSurviveModelChange` | `EffortSetting` có `levels` riêng: dù option có `efforts: []` hay `nil` như Claude, `selectModel` không xoá mức suy luận |
+| `unknownEffortStaysInLevels` | Disk `turbo`: `levels(for:)` có `turbo`, sau `selectModel` sang model có `efforts: nil` (chưa biết) thì key không bị đụng |
 | `fastHiddenWithoutModelTier` | `requiresModelTier` và model không có `fastDescription`: `isFastAvailable == false`. Claude thì `true` |
 | `switchModeRefusesWhenDirty` | Trả về `false`, `mode` giữ nguyên |
 | `fileSaveValidatesBeforeWriting` | Lỗi validate: `writes` rỗng, `saveError` có giá trị |

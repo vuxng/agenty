@@ -112,7 +112,7 @@ public struct CodexConfigBackend: ConfigBackend {
         let root = user.config
         var models = models
         if case .string(let name)? = root["model"], !models.contains(where: { $0.id == name }) {
-            models.append(ModelOption(id: name, displayName: name, isDefault: false, efforts: [], fastDescription: nil))
+            models.append(ModelOption(id: name, displayName: name, isDefault: false, efforts: nil, fastDescription: nil))
         }
         let model = ModelSetting(path: ["model"], options: models, allowsCustom: false)
         let efforts = [EffortSetting(path: ["model_reasoning_effort"], modelName: nil, levels: nil)]

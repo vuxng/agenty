@@ -335,7 +335,7 @@ private actor ConfigPreviewBackend: ConfigBackend {
         let levels = ["low", "medium", "high", "xhigh"]
         let models: [ModelOption] = claude
             ? ["best", "fable", "opus", "sonnet", "haiku", "opus[1m]", "sonnet[1m]", "opusplan"].map {
-                ModelOption(id: $0, displayName: $0, isDefault: $0 == "best", efforts: levels, fastDescription: nil)
+                ModelOption(id: $0, displayName: $0, isDefault: $0 == "best", efforts: nil, fastDescription: nil)
             }
             : [
                 ModelOption(id: "gpt-5.4", displayName: "GPT-5.4", isDefault: true, efforts: levels,

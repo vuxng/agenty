@@ -34,7 +34,11 @@ public struct TextFile: Sendable {
             let exists = try Self.attributes(at: target) != nil
             let temporary = parent.appendingPathComponent(".\(UUID().uuidString).tmp")
             do {
-                try Data(text.utf8).write(to: temporary, options: .withoutOverwriting)
+                let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL, mode_t(0o600))
+                guard descriptor >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+                let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+                try handle.write(contentsOf: Data(text.utf8))
+                try handle.close()
                 if exists {
                     // Default replacement keeps the original file's metadata, including permissions.
                     _ = try manager.replaceItemAt(target, withItemAt: temporary)

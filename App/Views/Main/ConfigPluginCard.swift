@@ -29,6 +29,7 @@ struct ConfigPluginCard: View {
                         )) {
                             Text(verbatim: plugin.name)
                         }
+                        .toggleStyle(.switch)
                     } else {
                         HStack(spacing: 8) {
                             Text(verbatim: plugin.name)
