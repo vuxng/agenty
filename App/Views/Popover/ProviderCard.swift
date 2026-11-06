@@ -75,10 +75,11 @@ struct ProviderCard: View {
                     Text("No active limits").font(.caption).foregroundStyle(.secondary)
                 }
             } else {
-                ForEach(Array(snapshot.windows.enumerated()), id: \.offset) { _, window in
+                ForEach(Array(snapshot.windows.enumerated()), id: \.offset) { index, window in
                     WindowRow(
                         window: window,
-                        level: UsageLevel.of(window.usedPercent, thresholds: store.configuration.thresholds)
+                        level: UsageLevel.of(window.usedPercent, thresholds: store.configuration.thresholds),
+                        showsReset: index == 0 || !window.sharesReset(with: snapshot.windows[index - 1])
                     )
                 }
             }

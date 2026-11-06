@@ -29,7 +29,6 @@ public enum ClaudeUsageParser {
     }
 
     private static func window(fromLimit row: [String: Any]) -> UsageWindow? {
-        guard (row["is_active"] as? Bool) != false else { return nil }
         let name = row["kind"] as? String ?? "?"
         let kind: WindowKind
         switch name {

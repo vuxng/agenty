@@ -11,8 +11,25 @@ struct ProviderErrorView: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            Text(message).font(.caption)
-            Spacer(minLength: 0)
+            ProviderErrorContent(provider: provider, error: error, store: store, onRetryKeychain: onRetryKeychain)
+        }
+    }
+}
+
+/// Shared wording and actions; each surface supplies its own icon and container.
+struct ProviderErrorContent: View {
+    enum Layout { case inline, stacked }
+
+    let provider: ProviderID
+    let error: UsageError
+    let store: UsageStore
+    var onRetryKeychain: @MainActor () -> Void = {}
+    var layout: Layout = .inline
+
+    var body: some View {
+        Group {
+            Text(message).font(layout == .inline ? .caption : .body)
+            if layout == .inline { Spacer(minLength: 0) }
             switch error {
             case .cliNotFound:
                 Button("Choose path…", action: choosePath).controlSize(.small)
