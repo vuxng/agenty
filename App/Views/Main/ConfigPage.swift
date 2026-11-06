@@ -127,7 +127,7 @@ struct ConfigPage: View {
                 Text(verbatim: document.backend.displayPath)
                     .font(.caption.monospaced())
                 Button("Show in Finder", systemImage: "folder") {
-                    showInFinder(document.backend.file.url)
+                    Finder.show(document.backend.file.url)
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.borderless)
@@ -204,18 +204,5 @@ struct ConfigPage: View {
     private func refresh(force: Bool = false) {
         guard let document = model.configs[model.selectedProvider] else { return }
         Task { await document.refresh(force: force) }
-    }
-
-    private func showInFinder(_ url: URL) {
-        let manager = FileManager.default
-        if manager.fileExists(atPath: url.path) {
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-        } else {
-            let parent = url.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: parent.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                NSWorkspace.shared.open(parent)
-            }
-        }
     }
 }

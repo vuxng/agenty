@@ -38,7 +38,7 @@ struct InstructionsPage: View {
                 Text(verbatim: document.file.displayPath)
                     .font(.caption.monospaced())
                 Button("Show in Finder", systemImage: "folder") {
-                    showInFinder(document.file.url)
+                    Finder.show(document.file.url)
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.borderless)
@@ -66,7 +66,7 @@ struct InstructionsPage: View {
                     } else {
                         Text("This file isn't plain text, so Agenty can't edit it.")
                     }
-                    Button("Show in Finder") { showInFinder(document.file.url) }
+                    Button("Show in Finder") { Finder.show(document.file.url) }
                 }
                 .padding(.top, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -119,18 +119,5 @@ struct InstructionsPage: View {
 
     private func refresh() {
         model.instructions[model.selectedProvider]?.refresh()
-    }
-
-    private func showInFinder(_ url: URL) {
-        let manager = FileManager.default
-        if manager.fileExists(atPath: url.path) {
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-        } else {
-            let parent = url.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: parent.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                NSWorkspace.shared.open(parent)
-            }
-        }
     }
 }
