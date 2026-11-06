@@ -26,11 +26,11 @@ struct InstructionsPage: View {
 
     private func manuscript(_ document: InstructionsDocument) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                providerSelector
                 Text(verbatim: document.file.fileName)
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                providerSelector
             }
 
             HStack(spacing: 8) {
@@ -88,22 +88,26 @@ struct InstructionsPage: View {
     }
 
     private var providerSelector: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4) {
             ForEach(ProviderID.allCases, id: \.self) { provider in
+                let selected = model.selectedInstructions == provider
                 Button { model.selectedInstructions = provider } label: {
-                    ProviderStyle.logo(provider)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .padding(8)
-                        .background(model.selectedInstructions == provider
-                                    ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .circle)
-                        .contentShape(.circle)
+                    HStack(spacing: 8) {
+                        ProviderStyle.brandLogo(provider)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                        Text(verbatim: provider.displayName)
+                            .font(.callout.weight(selected ? .semibold : .regular))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(selected
+                                ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .capsule)
+                    .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
-                .help(Text(verbatim: provider.displayName))
-                .accessibilityLabel(Text(verbatim: provider.displayName))
-                .accessibilityAddTraits(model.selectedInstructions == provider ? .isSelected : [])
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .padding(4)

@@ -100,7 +100,7 @@ ngưỡng trong Settings.
 
 File nằm thẳng trên trường màu, không có khung, cột rộng tối đa 720pt canh giữa.
 
-Từ trên xuống: tên file cỡ lớn, bên phải là bộ chọn provider glass chỉ có logo (có `help` và nhãn VoiceOver).
+Từ trên xuống: bộ chọn provider dạng tab glass có logo và tên, canh trái ngay trên tên file, rồi tên file cỡ lớn.
 Tiếp theo là đường dẫn, nút Show in Finder, "Applies to new sessions". Sau đó là editor. Viên lưu nổi ở đáy,
 canh giữa.
 

@@ -66,6 +66,7 @@ Riêng popover còn dùng `.subheadline.weight(.medium)`, `.callout`,
 | `UsagePopover` | Template | Xem nhanh từ menu bar | — |
 | Settings panes | Template | Cài đặt, dùng `Form` grouped | General, Providers, Notifications |
 | Thẻ provider | Component | Một provider trong cửa sổ chính | Bình thường, cảnh báo, số cũ, không có số |
+| Bộ chọn provider | Component | Tab glass có logo và tên, canh trái ngay trên tên file | Đang chọn, không chọn |
 | Viên lưu | Component | Glass nổi ở đáy, nơi duy nhất cho việc lưu | Chưa lưu, xung đột, lưu lỗi |
 | Trang Usage | Template | Các thẻ provider cạnh nhau | — |
 | Trang Instructions | Template | File nằm thẳng trên trường màu | — |
