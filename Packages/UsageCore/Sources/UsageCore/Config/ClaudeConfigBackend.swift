@@ -131,7 +131,8 @@ public struct ClaudeConfigBackend: ConfigBackend {
         do {
             return try await withTimeout(timeout) {
                 try await runner.run(executable: executable, arguments: ["plugin", "list", "--json"],
-                                     environment: ["PATH": CodexProvider.searchPath(executable: executable, home: home)]) { channel in
+                                     environment: ["PATH": CodexProvider.searchPath(executable: executable, home: home)],
+                                     requireSuccessfulExit: true) { channel in
                     try await channel.finishInput()
                     var lines: [String] = []
                     while let line = try await channel.receive() { lines.append(line) }

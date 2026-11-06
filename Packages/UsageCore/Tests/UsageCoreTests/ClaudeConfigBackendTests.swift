@@ -176,6 +176,47 @@ import UsageCore
         #expect(config.values[["enabledPlugins", "formatter@tools"]] == .bool(true))
     }
 
+    @Test func validPluginJSONWithNonzeroExitFallsBackToFile() async throws {
+        defer { try? FileManager.default.removeItem(at: home) }
+        let executable = home.appending(path: ".local/bin/claude")
+        try FileManager.default.createDirectory(at: executable.deletingLastPathComponent(),
+                                               withIntermediateDirectories: true)
+        try """
+        #!/bin/sh
+        echo '[{"id":"cli@tools","scope":"user","enabled":true}]'
+        exit 3
+        """.write(to: executable, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let locator = CLILocator(home: home, probe: FakeProbe(executables: [executable.path]),
+                                 shell: FakeShell(result: nil))
+        let backend = ClaudeConfigBackend(home: home, locator: locator, runner: SubprocessRunner())
+        try backend.file.write(#"{"enabledPlugins":{"file@tools":false}}"#)
+
+        let config = try await backend.load().config
+
+        #expect(!config.pluginsComplete)
+        #expect(config.plugins == [
+            PluginItem(id: "file@tools", name: "file", path: ["enabledPlugins", "file@tools"], isEnabled: false),
+        ])
+        #expect(config.values == [["enabledPlugins", "file@tools"]: .bool(false)])
+    }
+
+    @Test func unsuccessfulPluginExitFallsBackWithFakeRunner() async throws {
+        defer { try? FileManager.default.removeItem(at: home) }
+        let text = String(decoding: try fixture("claude-plugin-list"), as: UTF8.self)
+        let (backend, runner) = backend(found: true, channel: ScriptedChannel(lines: [text]))
+        runner.exitCode = 3
+        try backend.file.write(#"{"enabledPlugins":{"file@tools":false}}"#)
+
+        let config = try await backend.load().config
+
+        #expect(!config.pluginsComplete)
+        #expect(config.plugins == [
+            PluginItem(id: "file@tools", name: "file", path: ["enabledPlugins", "file@tools"], isEnabled: false),
+        ])
+        #expect(config.values == [["enabledPlugins", "file@tools"]: .bool(false)])
+    }
+
     @Test func saveChangesOnlyEditedKeys() async throws {
         defer { try? FileManager.default.removeItem(at: home) }
         let (backend, _) = backend()

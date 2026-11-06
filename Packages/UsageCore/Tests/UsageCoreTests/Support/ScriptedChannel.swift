@@ -75,6 +75,7 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
         var environment: [String: String] = [:]
         var runCount = 0
         var launchError: (any Error)?
+        var exitCode: Int32 = 0
     }
 
     private let channel: ScriptedChannel
@@ -91,6 +92,23 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
         set { record.withLock { $0.launchError = newValue } }
     }
     var runCount: Int { record.withLock { $0.runCount } }
+
+    var exitCode: Int32 {
+        get { record.withLock { $0.exitCode } }
+        set { record.withLock { $0.exitCode = newValue } }
+    }
+
+    func run<R: Sendable>(
+        executable: URL,
+        arguments: [String],
+        environment: [String: String],
+        requireSuccessfulExit: Bool,
+        body: @Sendable (any LineChannel) async throws -> R
+    ) async throws -> R {
+        let result = try await run(executable: executable, arguments: arguments, environment: environment, body: body)
+        if requireSuccessfulExit && exitCode != 0 { throw ProcessRunnerError.unsuccessfulExit }
+        return result
+    }
 
     func run<R: Sendable>(
         executable: URL,

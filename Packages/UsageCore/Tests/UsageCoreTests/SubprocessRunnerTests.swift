@@ -3,6 +3,41 @@ import Testing
 @testable import UsageCore
 
 @Suite struct SubprocessRunnerTests {
+    @Test func nonzeroExitStillReturnsOutputByDefault() async throws {
+        let output = try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
+            arguments: ["-c", "echo ok; exit 3"], environment: [:]) { channel in
+                try await channel.finishInput()
+                var lines: [String] = []
+                while let line = try await channel.receive() { lines.append(line) }
+                return lines
+            }
+        #expect(output == ["ok"])
+    }
+
+    @Test func checkedRunRejectsNonzeroExitAfterOutput() async throws {
+        await #expect(throws: ProcessRunnerError.unsuccessfulExit) {
+            try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
+                arguments: ["-c", "echo ok; exit 3"], environment: [:], requireSuccessfulExit: true) { channel in
+                    try await channel.finishInput()
+                    var lines: [String] = []
+                    while let line = try await channel.receive() { lines.append(line) }
+                    #expect(lines == ["ok"])
+                    return lines
+                }
+        }
+    }
+
+    @Test func checkedRunReturnsOutputOnSuccess() async throws {
+        let output = try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
+            arguments: ["-c", "echo ok; exit 0"], environment: [:], requireSuccessfulExit: true) { channel in
+                try await channel.finishInput()
+                var lines: [String] = []
+                while let line = try await channel.receive() { lines.append(line) }
+                return lines
+            }
+        #expect(output == ["ok"])
+    }
+
     @Test func echoesLinesThroughCat() async throws {
         let out = try await SubprocessRunner().run(executable: URL(filePath: "/bin/cat"), arguments: [], environment: [:]) { ch in
             try await ch.send("hello")
