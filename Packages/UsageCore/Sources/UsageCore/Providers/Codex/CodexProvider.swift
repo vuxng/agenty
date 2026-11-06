@@ -60,14 +60,7 @@ public struct CodexProvider: UsageProvider {
                 try await runner.run(executable: executable, arguments: ["app-server"], environment: environment) { channel in
                     bodyStarted.withLock { $0 = true }
                     let rpc = JSONRPCClient(channel: channel, includesVersionField: false)
-                    _ = try await rpc.call("initialize", params: .object([
-                        "clientInfo": .object([
-                            "name": .string("agenty"),
-                            "title": .string("Agenty"),
-                            "version": .string(version),
-                        ]),
-                    ]))
-                    try await rpc.notify("initialized", params: nil)
+                    try await CodexAppServer.initialize(rpc, version: version)
                     let result = try await rpc.call("account/rateLimits/read",
                                                     params: .object(["excludeResetCreditDetails": .bool(true)]))
                     // Best effort: a failed account lookup must not turn into "not logged in" for the whole card.
@@ -86,7 +79,7 @@ public struct CodexProvider: UsageProvider {
             switch error {
             case .closed:
                 throw .unexpectedFormat("codex app-server exited early")
-            case let .server(code, message):
+            case let .server(code, message, _):
                 let lowered = message.lowercased()
                 if ["auth", "login", "logged in"].contains(where: lowered.contains) { throw .notLoggedIn }
                 throw .unexpectedFormat("codex error \(code)")

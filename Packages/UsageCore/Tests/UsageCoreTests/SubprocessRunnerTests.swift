@@ -20,6 +20,12 @@ import Testing
         #expect(line == "ok")
     }
 
+    @Test func longLineArrivesWhole() async throws {
+        let line = try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
+            arguments: ["-c", "head -c 300000 /dev/zero | tr '\\0' a; echo"], environment: [:]) { try await $0.receive() }
+        #expect(line == String(repeating: "a", count: 300000))
+    }
+
     @Test func launchFailureThrows() async {
         await #expect(throws: (any Error).self) {
             try await SubprocessRunner().run(executable: URL(filePath: "/nonexistent/codex"), arguments: [], environment: [:]) { _ in 0 }

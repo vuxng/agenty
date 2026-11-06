@@ -2,7 +2,7 @@ import Foundation
 import Synchronization
 
 public enum JSONRPCError: Error, Sendable, Equatable {
-    case server(code: Int, message: String)
+    case server(code: Int, message: String, data: JSONValue? = nil)
     case closed
 }
 
@@ -35,7 +35,8 @@ public final class JSONRPCClient: Sendable {
             if case .object(let error)? = reply["error"] {
                 throw JSONRPCError.server(
                     code: error["code"]?.intValue ?? 0,
-                    message: { if case .string(let s)? = error["message"] { return s } else { return "" } }()
+                    message: { if case .string(let s)? = error["message"] { return s } else { return "" } }(),
+                    data: error["data"]
                 )
             }
             return try JSONEncoder().encode(reply["result"] ?? .null)

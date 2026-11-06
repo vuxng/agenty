@@ -34,7 +34,7 @@ public struct SubprocessRunner: ProcessRunner {
         ) { execution in
             let channel = Channel(
                 writer: execution.standardInputWriter,
-                lines: execution.standardOutput.strings().makeAsyncIterator()
+                lines: execution.standardOutput.strings(bufferingPolicy: .maxLineLength(16 * 1024 * 1024)).makeAsyncIterator()
             )
             return try await body(channel)
         }
