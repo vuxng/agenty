@@ -319,6 +319,140 @@ import Testing
         }
     }
 
+    @Test func refreshKeepsVersionWhenFileChangesDuringLoad() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.success(.init(
+                config: Self.config(values: [["fast"]: .bool(true)]), version: "v2"
+            )))
+            await backend.blockLoad()
+            let refreshing = Task { await document.refresh(force: true) }
+            await backend.waitForLoad()
+            try backend.file.write("external")
+            await backend.releaseLoad()
+            await refreshing.value
+            #expect(document.hasConflict)
+            #expect(document.config == Self.config())
+            #expect(document.edits == [edit])
+            #expect(document.loadError == nil)
+            #expect(document.diskText == "original")
+            await document.save()
+            #expect(await backend.saveCalls == [.init(edits: [edit], version: "v1")])
+        }
+    }
+
+    @Test func cleanDocumentAdoptsLoadWhenFileChanges() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let updated = Self.config(values: [["fast"]: .bool(true)])
+            await backend.setLoadResult(.success(.init(config: updated, version: "v2")))
+            await backend.blockLoad()
+            let refreshing = Task { await document.refresh(force: true) }
+            await backend.waitForLoad()
+            try backend.file.write("external")
+            await backend.releaseLoad()
+            await refreshing.value
+            #expect(!document.hasConflict)
+            #expect(document.config == updated)
+            #expect(document.diskText == "original")
+            #expect(await backend.loadCount == 2)
+            await document.refresh()
+            #expect(await backend.loadCount == 3)
+            #expect(document.diskText == "external")
+        }
+    }
+
+    @Test func keepMineStaysConflictedWhenFileChangesAgain() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            try backend.file.write("external")
+            await document.refresh()
+            #expect(document.hasConflict)
+            await backend.setLoadResult(.success(.init(
+                config: Self.config(values: [["fast"]: .bool(true)]), version: "v2"
+            )))
+            await backend.blockLoad()
+            let keeping = Task { await document.keepMine() }
+            await backend.waitForLoad()
+            try backend.file.write("external again")
+            await backend.releaseLoad()
+            await keeping.value
+            #expect(document.hasConflict)
+            #expect(document.config == Self.config())
+            #expect(document.edits == [edit])
+            #expect(document.diskText == "external")
+        }
+    }
+
+    @Test func saveRetryStopsWhenFileChangesDuringLoad() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.failure(.readFailed("reload failed")))
+            await document.refresh(force: true)
+            #expect(document.loadError == .readFailed("reload failed"))
+            await backend.setLoadResult(.success(.init(
+                config: Self.config(values: [["fast"]: .bool(true)]), version: "v2"
+            )))
+            await backend.blockLoad()
+            let saving = Task { await document.save() }
+            await backend.waitForLoad()
+            try backend.file.write("external")
+            await backend.releaseLoad()
+            await saving.value
+            #expect(document.hasConflict)
+            #expect(document.saveError == nil)
+            #expect(await backend.saveCalls.isEmpty)
+            #expect(document.edits == [edit])
+            #expect(document.config == Self.config())
+            #expect(document.loadError == .readFailed("reload failed"))
+            #expect(document.diskText == "original")
+            #expect(!document.isSaving)
+        }
+    }
+
+    @Test func editBackToOldValueDuringReloadIsKept() async throws {
+        try await withDocument(config: Self.config(values: [effort.path: .string("low")])) { backend, document in
+            await document.refresh()
+            document.set(.string("high"), at: effort.path)
+            let updated = Self.config(values: [effort.path: .string("high")])
+            await backend.setLoadResult(.success(.init(config: updated, version: "v2")))
+            await backend.blockLoad()
+            let saving = Task { await document.save() }
+            await backend.waitForLoad()
+            document.set(.string("medium"), at: effort.path)
+            document.set(.string("low"), at: effort.path)
+            await backend.releaseLoad()
+            await saving.value
+            #expect(document.config == updated)
+            #expect(document.edits == [.init(path: effort.path, value: .string("low"))])
+            #expect(document.isDirty)
+        }
+    }
+
+    @Test func editMatchingReloadedValueIsDropped() async throws {
+        try await withDocument(config: Self.config(values: [effort.path: .string("low")])) { backend, document in
+            await document.refresh()
+            document.set(.string("high"), at: effort.path)
+            let updated = Self.config(values: [effort.path: .string("high")])
+            await backend.setLoadResult(.success(.init(config: updated, version: "v2")))
+            await backend.blockLoad()
+            let saving = Task { await document.save() }
+            await backend.waitForLoad()
+            document.set(.string("high"), at: effort.path)
+            await backend.releaseLoad()
+            await saving.value
+            #expect(document.config == updated)
+            #expect(document.edits.isEmpty)
+            #expect(!document.isDirty)
+        }
+    }
+
     @Test func unchangedFileSkipsLoad() async throws {
         try await withDocument { backend, document in
             await document.refresh()

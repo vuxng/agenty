@@ -62,7 +62,7 @@ public final class ConfigDocument {
 
     public func set(_ value: ConfigValue?, at path: ConfigPath) {
         edits.removeAll { $0.path == path }
-        if !equivalent(value, config?.values[path], at: path) {
+        if isRefreshing || !equivalent(value, config?.values[path], at: path) {
             edits.append(ConfigEdit(path: path, value: value))
         }
     }
@@ -141,6 +141,7 @@ public final class ConfigDocument {
                         return (false, nil)
                     }
                     await load()
+                    guard !hasConflict else { return (false, nil) }
                 }
                 if let loadError {
                     saveError = loadError
@@ -187,8 +188,8 @@ public final class ConfigDocument {
             loadError = error
             return
         }
-        await load()
         hasConflict = false
+        await load()
     }
 
     public func reload() async {
@@ -226,9 +227,14 @@ public final class ConfigDocument {
         hasLoaded = true
         do {
             let snapshot = try await backend.load()
+            if isDirty, try readFile() != diskText {
+                hasConflict = true
+                return
+            }
             config = snapshot.config
             version = snapshot.version
             loadError = nil
+            edits.removeAll { equivalent($0.value, config?.values[$0.path], at: $0.path) }
         } catch {
             loadError = error
         }
