@@ -21,7 +21,9 @@ struct ConfigPage: View {
         .onChange(of: model.selectedProvider) {
             cancelModeChange()
             showingModeDialog = false
-            model.pendingRiskySave = nil
+            if model.pendingRiskySave != model.selectedProvider {
+                model.pendingRiskySave = nil
+            }
             refresh()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in

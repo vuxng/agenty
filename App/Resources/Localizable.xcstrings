@@ -1175,18 +1175,18 @@
         }
       }
     },
-    "Your unsaved instruction changes will be lost if you discard them." : {
+    "Your unsaved changes will be lost if you discard them." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your unsaved instruction changes will be lost if you discard them."
+            "value" : "Your unsaved changes will be lost if you discard them."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Những thay đổi hướng dẫn chưa lưu sẽ bị mất nếu bạn bỏ thay đổi."
+            "value" : "Những thay đổi chưa lưu sẽ bị mất nếu bạn bỏ thay đổi."
           }
         }
       }
