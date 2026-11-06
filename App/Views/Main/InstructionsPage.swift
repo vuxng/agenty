@@ -62,7 +62,6 @@ struct InstructionsPage: View {
                         .accessibilityHidden(true)
                     Text("This file isn't plain text, so Agenty can't edit it.")
                     Button("Show in Finder") { showInFinder(document.file.url) }
-                        .buttonStyle(.glass)
                 }
                 .padding(.top, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
