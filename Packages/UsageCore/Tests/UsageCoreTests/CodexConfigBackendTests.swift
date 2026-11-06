@@ -286,11 +286,64 @@ import UsageCore
         #expect(!FileManager.default.fileExists(atPath: try #require(runner.environment["CODEX_HOME"])))
     }
 
+    @Test func validateInvalidEnumThrowsInvalidFile() async throws {
+        let message = "invalid configuration: unknown variant `bogus`, expected one of ..."
+        let channel = errorChannel(message: message, code: -32603)
+        let (backend, runner) = backend(channel)
+        await #expect(throws: ConfigError.invalidFile(message)) {
+            try await backend.validate("sandbox_mode = \"bogus\"")
+        }
+        #expect(!FileManager.default.fileExists(atPath: try #require(runner.environment["CODEX_HOME"])))
+    }
+
     @Test func validateSuccessCleansUp() async throws {
         let channel = ScriptedChannel(lines: [#"{"id":1,"result":{}}"#, #"{"id":2,"result":{"config":{},"origins":{}}}"#])
         let (backend, runner) = backend(channel)
         #expect(try await backend.validate("") == .valid)
         #expect(!FileManager.default.fileExists(atPath: try #require(runner.environment["CODEX_HOME"])))
+    }
+
+    @Test(.serialized, arguments: ["valid", "invalid", "unsupported"])
+    func validateSurfacesCleanupFailure(outcome: String) async throws {
+        let reference = Mutex<FakeProcessRunner?>(nil)
+        let channel = ScriptedChannel { request in
+            if request["method"] == .string("initialize") { return [#"{"id":1,"result":{}}"#] }
+            guard request["method"] == .string("config/read") else { return [] }
+            do {
+                let path = try #require(reference.withLock { $0?.environment["CODEX_HOME"] })
+                try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: path)
+                if outcome == "valid" { return [#"{"id":2,"result":{"config":{},"origins":{}}}"#] }
+                let message = outcome == "invalid"
+                    ? "\(path)/config.toml:2:9: unclosed table"
+                    : "Invalid request: unknown variant `config/read`, expected one of ..."
+                let response: JSONValue = .object(["id": .number(2), "error": .object([
+                    "code": .number(outcome == "invalid" ? -32603 : -32600), "message": .string(message),
+                ])])
+                return [String(decoding: try JSONEncoder().encode(response), as: UTF8.self)]
+            } catch { Issue.record(error); return [] }
+        }
+        let (backend, runner) = backend(channel)
+        reference.withLock { $0 = runner }
+        defer {
+            reference.withLock { $0 = nil }
+            do {
+                let path = try #require(runner.environment["CODEX_HOME"])
+                try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: path)
+                try FileManager.default.removeItem(atPath: path)
+            } catch { Issue.record(error) }
+        }
+        do {
+            _ = try await backend.validate(outcome == "invalid" ? "[broken" : "")
+            Issue.record("Expected cleanup failure")
+        } catch {
+            guard case .readFailed(let message) = error else { Issue.record(error); return }
+            #expect(message.contains("Failed to remove temporary configuration"))
+            if outcome == "invalid" {
+                #expect(message.contains("config.toml:2:9: unclosed table"))
+            }
+        }
+        let path = try #require(runner.environment["CODEX_HOME"])
+        #expect(FileManager.default.fileExists(atPath: path + "/config.toml"))
     }
 
     @Test func writeFilePreservesTextAndUsesOverride() async throws {

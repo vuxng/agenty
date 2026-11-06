@@ -70,24 +70,37 @@ public struct CodexConfigBackend: ConfigBackend {
     public func validate(_ text: String) async throws(ConfigError) -> ConfigValidation {
         let manager = FileManager.default
         let temporary = manager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? manager.removeItem(at: temporary) }
+        var temporaryCreated = false
+        var validationError: ConfigError?
         do {
             try manager.createDirectory(at: temporary, withIntermediateDirectories: false,
                                         attributes: [.posixPermissions: 0o700])
+            temporaryCreated = true
             let temporaryFile = temporary.appending(path: "config.toml")
             try Data(text.utf8).write(to: temporaryFile, options: .withoutOverwriting)
             try manager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: temporaryFile.path)
-            return try await server.withSession(environment: ["CODEX_HOME": temporary.path]) { rpc in
+            try await server.withSession(environment: ["CODEX_HOME": temporary.path]) { rpc in
                 _ = try await rpc.call("config/read", params: .object([:]))
-                return .valid
             }
         } catch {
-            let mapped = Self.mapError(error, saving: false, temporary: temporary)
-            switch mapped {
-            case .cliNotFound, .unsupportedCLI: return .unchecked
-            default: throw mapped
+            validationError = Self.mapError(error, saving: false, temporary: temporary)
+        }
+        if temporaryCreated {
+            do { try manager.removeItem(at: temporary) }
+            catch {
+                var message = "Failed to remove temporary configuration: "
+                    + Self.sanitized(String(describing: error), temporary: temporary)
+                if let validationError { message += "\nValidation failed: \(validationError)" }
+                throw .readFailed(message)
             }
         }
+        if let validationError {
+            switch validationError {
+            case .cliNotFound, .unsupportedCLI: return .unchecked
+            default: throw validationError
+            }
+        }
+        return .valid
     }
 
     public func writeFile(_ text: String) async throws(ConfigError) {
@@ -158,23 +171,26 @@ public struct CodexConfigBackend: ConfigBackend {
             .replacingOccurrences(of: "\"", with: "\\\"") + "\""
     }
 
+    private static func sanitized(_ message: String, temporary: URL?) -> String {
+        guard let temporary else { return message }
+        return message.replacingOccurrences(of: temporary.path + "/", with: "")
+            .replacingOccurrences(of: temporary.resolvingSymlinksInPath().path + "/", with: "")
+    }
+
     private static func mapError(_ error: any Error, saving: Bool, temporary: URL? = nil) -> ConfigError {
         if let error = error as? ConfigError { return error }
         if case CodexAppServerError.cliNotFound = error { return .cliNotFound }
-        func sanitized(_ message: String) -> String {
-            guard let temporary else { return message }
-            return message.replacingOccurrences(of: temporary.path + "/", with: "")
-                .replacingOccurrences(of: temporary.resolvingSymlinksInPath().path + "/", with: "")
-        }
-        if case JSONRPCError.server(_, let message, let data) = error {
-            let message = sanitized(message)
+        if case JSONRPCError.server(let code, let message, let data) = error {
+            let message = sanitized(message, temporary: temporary)
             let writeCode = data?["config_write_error_code"]
             if writeCode == .string("configVersionConflict") { return .conflict }
             if writeCode == .string("configValidationError") { return .invalidValue(message) }
-            if (writeCode == nil || writeCode == .null), message.contains("unknown variant") { return .unsupportedCLI }
+            if code == -32600, (writeCode == nil || writeCode == .null), message.contains("unknown variant") {
+                return .unsupportedCLI
+            }
             return saving ? .writeFailed(message) : .invalidFile(message)
         }
-        let message = sanitized(String(describing: error))
+        let message = sanitized(String(describing: error), temporary: temporary)
         return saving ? .writeFailed(message) : .readFailed(message)
     }
 
