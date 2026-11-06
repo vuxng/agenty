@@ -167,6 +167,22 @@
         }
       }
     },
+    "Agenty can't read this file: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty can't read this file: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty không đọc được file này: %@"
+          }
+        }
+      }
+    },
     "API format changed" : {
       "localizations" : {
         "vi" : {

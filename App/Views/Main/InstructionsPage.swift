@@ -54,13 +54,17 @@ struct InstructionsPage: View {
                     .foregroundStyle(.orange)
             }
 
-            if document.loadError != nil {
+            if let loadError = document.loadError {
                 VStack(alignment: .leading, spacing: 12) {
                     Image(systemName: "doc.badge.ellipsis")
                         .font(.title)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    Text("This file isn't plain text, so Agenty can't edit it.")
+                    if case .readFailed(let reason) = loadError {
+                        Text("Agenty can't read this file: \(reason)")
+                    } else {
+                        Text("This file isn't plain text, so Agenty can't edit it.")
+                    }
                     Button("Show in Finder") { showInFinder(document.file.url) }
                 }
                 .padding(.top, 24)

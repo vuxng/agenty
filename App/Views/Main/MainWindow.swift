@@ -7,7 +7,7 @@ struct MainWindow: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Group {
+        ZStack {
             switch page {
             case .usage: UsagePage(store: model.store, onRetryKeychain: model.retryKeychainAccess)
             case .instructions:
