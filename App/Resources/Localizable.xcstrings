@@ -299,6 +299,22 @@
         }
       }
     },
+    "Critical" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Critical"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nguy cấp"
+          }
+        }
+      }
+    },
     "Critical at" : {
       "localizations" : {
         "vi" : {
@@ -771,6 +787,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phiên bản"
+          }
+        }
+      }
+    },
+    "Warning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warning"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cảnh báo"
           }
         }
       }

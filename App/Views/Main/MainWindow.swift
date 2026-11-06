@@ -9,7 +9,7 @@ struct MainWindow: View {
     var body: some View {
         Group {
             switch page {
-            case .usage: Text(AppPage.usage.title)
+            case .usage: UsagePage(store: model.store, onRetryKeychain: model.retryKeychainAccess)
             case .instructions: Text(AppPage.instructions.title)
             }
         }
@@ -47,8 +47,8 @@ struct MainWindow: View {
                             Text("Updated —")
                         }
                     }
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+                    .font(.caption).monospacedDigit()
+                    .foregroundStyle(model.store.summaries.contains(where: \.isStale) ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
                 }
                 .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .primaryAction) {

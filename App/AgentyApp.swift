@@ -20,6 +20,7 @@ struct AgentyApp: App {
         .windowBackgroundDragBehavior(.enabled)
         .defaultSize(width: 980, height: 640)
         .defaultLaunchBehavior(.suppressed)
+        .commands { AppCommands(model: model) }
 
         Settings {
             SettingsView(model: model)
