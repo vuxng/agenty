@@ -10,6 +10,8 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 
 - Menu-bar glyph in three styles (bars, a single ring, or each provider's logo with its percentage) so you can see at a glance whether a limit is close.
 - Popover with every window, its percentage and its reset time, plus your plan and any credit balance.
+- Main window with Usage and Instructions pages, opened with the Open Agenty button in the popover. Usage shows your Claude and Codex limits side by side.
+- Instructions page to edit `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` in Markdown. Save with the Save button or Command-S; Agenty creates the file if it is missing. Changes apply to new sessions. If Codex is using `AGENTS.override.md`, the page warns that it ignores `AGENTS.md`.
 - Usage turns orange and red at levels you choose, 80% and 95% by default.
 - Notifications at those levels and when a limit resets.
 - Launch at login and a configurable refresh interval.

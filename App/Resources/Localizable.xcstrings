@@ -407,6 +407,16 @@
         }
       }
     },
+    "Instructions Markdown" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chỉ dẫn Markdown"
+          }
+        }
+      }
+    },
     "Keychain access denied — allow Agenty to read “Claude Code-credentials”" : {
       "localizations" : {
         "vi" : {
