@@ -230,20 +230,62 @@ import Testing
         try await withDocument { backend, document in
             await document.refresh()
             document.set(.bool(true), at: ["fast"])
+            document.set(.string("low"), at: effort.path)
             await backend.blockSave()
             let saving = Task { await document.save() }
             await backend.waitForSave()
             #expect(document.isSaving)
-            try backend.file.write("saved externally while awaiting backend")
+            document.set(.string("bypassPermissions"), at: permission)
+            document.set(.string("medium"), at: effort.path)
+            try backend.file.write("saved controls")
+            await backend.setLoadResult(.success(.init(
+                config: Self.config(values: [["fast"]: .bool(true), effort.path: .string("low")]), version: "v2"
+            )))
             await document.refresh()
             #expect(!document.hasConflict)
-            #expect(document.edits == [.init(path: ["fast"], value: .bool(true))])
+            #expect(document.edits.count == 3)
             #expect(await backend.loadCount == 1)
             await backend.releaseSave()
             await saving.value
             #expect(!document.hasConflict)
             #expect(!document.isSaving)
-            #expect(!document.isDirty)
+            #expect(document.isDirty)
+            #expect(document.edits == [
+                .init(path: permission, value: .string("bypassPermissions")),
+                .init(path: effort.path, value: .string("medium")),
+            ])
+            #expect(document.value(at: ["fast"]) == .bool(true))
+            #expect(document.diskText == "saved controls")
+            #expect(await backend.saveCalls == [.init(edits: [
+                .init(path: ["fast"], value: .bool(true)),
+                .init(path: effort.path, value: .string("low")),
+            ], version: "v1")])
+            #expect(await backend.loadCount == 2)
+        }
+    }
+
+    @Test func fileSaveKeepsNewerDraft() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            #expect(document.switchMode(to: .file))
+            document.fileDraft = "submitted"
+            await backend.blockValidation()
+            let saving = Task { await document.save() }
+            await backend.waitForValidation()
+            #expect(document.isSaving)
+            document.fileDraft = "newer draft"
+            await document.refresh()
+            await backend.releaseValidation()
+            await saving.value
+            #expect(await backend.validations == ["submitted"])
+            #expect(await backend.writes == ["submitted"])
+            let saved = try backend.file.read()
+            #expect(saved == "submitted")
+            #expect(document.diskText == "submitted")
+            #expect(document.fileDraft == "newer draft")
+            #expect(document.isDirty)
+            #expect(!document.hasConflict)
+            #expect(!document.isSaving)
             #expect(await backend.loadCount == 2)
         }
     }
@@ -355,6 +397,32 @@ import Testing
             #expect(document.isDirty)
             let unchanged = try backend.file.read()
             #expect(unchanged == "original")
+        }
+    }
+
+    @Test func fileSaveConflictsWhenDiskChangesDuringValidation() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            #expect(document.switchMode(to: .file))
+            document.fileDraft = "mine"
+            await backend.blockValidation()
+            let saving = Task { await document.save() }
+            await backend.waitForValidation()
+            #expect(document.isSaving)
+            try backend.file.write("external during validation")
+            await backend.releaseValidation()
+            await saving.value
+            #expect(await backend.validations == ["mine"])
+            #expect(await backend.writes.isEmpty)
+            let external = try backend.file.read()
+            #expect(external == "external during validation")
+            #expect(document.hasConflict)
+            #expect(document.fileDraft == "mine")
+            #expect(document.diskText == "original")
+            #expect(document.isDirty)
+            #expect(!document.isSaving)
+            #expect(document.saveError == nil)
+            #expect(await backend.loadCount == 1)
         }
     }
 

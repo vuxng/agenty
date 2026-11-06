@@ -123,8 +123,10 @@ public final class ConfigDocument {
             let savedNotice: ConfigNotice?
             switch mode {
             case .controls:
-                let result = try await backend.save(edits, version: version)
-                edits.removeAll()
+                let submittedEdits = edits
+                let result = try await backend.save(submittedEdits, version: version)
+                edits.removeAll { submittedEdits.contains($0) }
+                diskText = try readFile()
                 savedNotice = result.overrideMessage.map(ConfigNotice.overridden)
             case .file:
                 guard try readFile() == diskText else {
@@ -133,6 +135,10 @@ public final class ConfigDocument {
                 }
                 let text = fileDraft
                 let validation = try await backend.validate(text)
+                guard try readFile() == diskText else {
+                    hasConflict = true
+                    return
+                }
                 try await backend.writeFile(text)
                 diskText = text
                 savedNotice = validation == .unchecked ? .fileNotChecked : nil

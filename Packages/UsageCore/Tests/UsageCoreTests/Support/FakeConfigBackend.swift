@@ -19,6 +19,9 @@ actor FakeConfigBackend: ConfigBackend {
     private var saveIsBlocked = false
     private var saveGate: CheckedContinuation<Void, Never>?
     private var saveStarted: CheckedContinuation<Void, Never>?
+    private var validationIsBlocked = false
+    private var validationGate: CheckedContinuation<Void, Never>?
+    private var validationStarted: CheckedContinuation<Void, Never>?
 
     init(file: TextFile, snapshot: ConfigSnapshot) {
         self.file = file
@@ -42,6 +45,19 @@ actor FakeConfigBackend: ConfigBackend {
         saveGate = nil
     }
 
+    func blockValidation() { validationIsBlocked = true }
+
+    func waitForValidation() async {
+        if validationGate != nil { return }
+        await withCheckedContinuation { validationStarted = $0 }
+    }
+
+    func releaseValidation() {
+        validationIsBlocked = false
+        validationGate?.resume()
+        validationGate = nil
+    }
+
     func load() async throws(ConfigError) -> ConfigSnapshot {
         loadCount += 1
         return try loadResult.get()
@@ -61,6 +77,13 @@ actor FakeConfigBackend: ConfigBackend {
 
     func validate(_ text: String) async throws(ConfigError) -> ConfigValidation {
         validations.append(text)
+        if validationIsBlocked {
+            await withCheckedContinuation {
+                validationGate = $0
+                validationStarted?.resume()
+                validationStarted = nil
+            }
+        }
         return try validationResult.get()
     }
 
