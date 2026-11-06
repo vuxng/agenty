@@ -35,7 +35,7 @@ public final class ConfigDocument {
             guard let value = edit.value,
                   let choice = config?.choices.first(where: { $0.path == edit.path }) else { return false }
             return choice.dangerous.contains(value)
-                && (isRefreshing || !equivalent(value, config?.values[edit.path], at: edit.path))
+                && (isRefreshing || loadError != nil || !equivalent(value, config?.values[edit.path], at: edit.path))
         }
     }
 
