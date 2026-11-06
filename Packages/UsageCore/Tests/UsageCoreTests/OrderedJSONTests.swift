@@ -106,6 +106,16 @@ import UsageCore
         #expect(try OrderedJSON(parsing: document.serialized()) == document)
     }
 
+    @Test func equalityDistinguishesUnicodeKeySpellings() throws {
+        let composed = try OrderedJSON(parsing: #"{"\u00e9":1}"#)
+        let decomposed = try OrderedJSON(parsing: #"{"e\u0301":1}"#)
+        #expect(composed.value(at: ["\u{e9}"]) == .number("1"))
+        #expect(decomposed.value(at: ["\u{e9}"]) == nil)
+        #expect(composed != decomposed)
+        #expect(try OrderedJSON(parsing: #"{"é":1}"#) == composed)
+        #expect(try OrderedJSON(parsing: #"{"\u00e9":2}"#) != composed)
+    }
+
     @Test func distinctUnicodeKeySpellingsStaySeparate() throws {
         var document = try OrderedJSON(parsing: #"{"é":1,"e\u0301":2}"#)
         #expect(document.value(at: ["é"]) == .number("1"))

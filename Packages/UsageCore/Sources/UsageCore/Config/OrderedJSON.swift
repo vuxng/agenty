@@ -11,6 +11,10 @@ public indirect enum OrderedJSON: Sendable, Equatable {
             self.key = key
             self.value = value
         }
+
+        public static func == (lhs: Member, rhs: Member) -> Bool {
+            lhs.key.utf8.elementsEqual(rhs.key.utf8) && lhs.value == rhs.value
+        }
     }
 
     case null
