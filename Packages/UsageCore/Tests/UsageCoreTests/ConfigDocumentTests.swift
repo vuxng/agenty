@@ -637,6 +637,26 @@ import Testing
         }
     }
 
+    @Test func dangerousEditDuringReloadNeedsConfirmation() async throws {
+        try await withDocument(config: Self.config(values: [permission: .string("bypassPermissions")])) { backend, document in
+            await document.refresh()
+            document.set(.string("plan"), at: permission)
+            let updated = Self.config(values: [permission: .string("plan")])
+            await backend.setLoadResult(.success(.init(config: updated, version: "v2")))
+            await backend.blockLoad()
+            let saving = Task { await document.save() }
+            await backend.waitForLoad()
+            document.set(nil, at: permission)
+            document.set(.string("bypassPermissions"), at: permission)
+            let edit = ConfigEdit(path: permission, value: .string("bypassPermissions"))
+            #expect(document.dangerousEdits == [edit])
+            await backend.releaseLoad()
+            await saving.value
+            #expect(document.config == updated)
+            #expect(document.dangerousEdits == [edit])
+        }
+    }
+
     @Test func modelChangeResetsUnsupportedEffort() async throws {
         try await withDocument { _, document in
             await document.refresh()
