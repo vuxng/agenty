@@ -29,6 +29,9 @@ enum SettingsKey {
 enum AppDefaults {
     static let refreshChoices = [1, 2, 5, 10, 15]
 
+    /// People without the Grok CLI should not get an error card.
+    static func isEnabledByDefault(_ id: ProviderID) -> Bool { id != .grok }
+
     /// Non-persistent registration defaults.
     static func register(in defaults: UserDefaults) {
         var values: [String: Any] = [
@@ -42,7 +45,7 @@ enum AppDefaults {
             SettingsKey.showAccountEmail: false, // off by default: the popover may be on a shared screen
         ]
         for id in ProviderID.allCases {
-            values[SettingsKey.providerEnabled(id)] = true
+            values[SettingsKey.providerEnabled(id)] = isEnabledByDefault(id)
             values[SettingsKey.providerPath(id)] = ""
         }
         defaults.register(defaults: values)

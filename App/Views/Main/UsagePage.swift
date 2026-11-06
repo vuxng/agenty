@@ -32,7 +32,7 @@ struct UsagePage: View {
 
 #if DEBUG
 private struct UsagePagePreview: View {
-    var enabled: Set<ProviderID> = [.claude, .codex]
+    var enabled: Set<ProviderID> = [.claude, .codex, .grok]
     @State private var store: UsageStore?
 
     var body: some View {
@@ -48,14 +48,15 @@ private struct UsagePagePreview: View {
             let results: [ProviderID: Result<UsageSnapshot, UsageError>] = [
                 .claude: .success(.preview(.claude, percent: 62, plan: "max")),
                 .codex: .success(.preview(.codex, percent: 18, plan: "plus")),
+                .grok: .success(.preview(.grok, percent: 7, plan: "SuperGrok Plus")),
             ]
             store = await previewStore(results.filter { enabled.contains($0.key) })
         }
     }
 }
 
-#Preview("Two providers — minimum window") { UsagePagePreview().frame(width: 860, height: 580) }
-#Preview("Two providers — large window") { UsagePagePreview().frame(width: 1400, height: 900) }
+#Preview("Three providers — minimum window") { UsagePagePreview().frame(width: 860, height: 580) }
+#Preview("Three providers — large window") { UsagePagePreview().frame(width: 1400, height: 900) }
 #Preview("One provider — fixed width") { UsagePagePreview(enabled: [.claude]).frame(width: 980, height: 640) }
 #Preview("No providers enabled") {
     UsagePage(store: UsageStore(providers: [], configuration: StoreConfiguration(enabled: [])), onRetryKeychain: {})

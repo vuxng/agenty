@@ -7,6 +7,7 @@ enum ProviderStyle {
         switch p {
         case .claude: Color(red: 217.0 / 255, green: 120.0 / 255, blue: 87.0 / 255)
         case .codex: Color(red: 107.0 / 255, green: 107.0 / 255, blue: 242.0 / 255)
+        case .grok: Color(red: 154.0 / 255, green: 160.0 / 255, blue: 166.0 / 255)
         }
     }
 
@@ -15,6 +16,7 @@ enum ProviderStyle {
         switch p {
         case .claude: Image(.claudeLogo)
         case .codex: Image(.codexLogo)
+        case .grok: Image(.grokLogo)
         }
     }
 
@@ -23,6 +25,8 @@ enum ProviderStyle {
         switch p {
         case .claude: Image(.claudeBrandLogo)
         case .codex: Image(.codexBrandLogo)
+        // The monochrome mark stays a template, following the foreground color in dark mode.
+        case .grok: Image(.grokLogo)
         }
     }
 }

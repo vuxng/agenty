@@ -55,6 +55,7 @@ struct ProviderErrorContent: View {
             switch provider {
             case .claude: return "Not signed in — run `claude`"
             case .codex: return "Not signed in — run `codex login`"
+            case .grok: return "Not signed in — run `grok login`"
             }
         case .tokenExpired: return "Session expired — open Claude Code once"
         case .keychainDenied: return "Keychain access denied — allow Agenty to read “Claude Code-credentials”"

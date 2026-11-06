@@ -8,9 +8,11 @@ public struct InstructionsFile: Sendable {
 
     public init(provider: ProviderID, home: URL) {
         self.provider = provider
-        self.url = home.appendingPathComponent(
-            provider == .claude ? ".claude/CLAUDE.md" : ".codex/AGENTS.md"
-        )
+        switch provider {
+        case .claude: self.url = home.appendingPathComponent(".claude/CLAUDE.md")
+        case .codex: self.url = home.appendingPathComponent(".codex/AGENTS.md")
+        case .grok: preconditionFailure("Grok has no instructions file")
+        }
     }
 
     public var fileName: String { url.lastPathComponent }

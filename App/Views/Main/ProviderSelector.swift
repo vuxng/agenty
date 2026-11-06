@@ -7,7 +7,7 @@ struct ProviderSelector: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(ProviderID.allCases, id: \.self) { provider in
+            ForEach(ProviderID.configurable, id: \.self) { provider in
                 let selected = selection == provider
                 Button { selection = provider } label: {
                     HStack(spacing: 8) {

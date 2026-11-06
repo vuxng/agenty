@@ -2,7 +2,7 @@
 
 # Agenty
 
-A small macOS menu-bar app that shows how much of your Claude and Codex subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset.
+A small macOS menu-bar app that shows how much of your Claude, Codex and Grok subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset. Grok is supported for usage only.
 
 <img src="docs/images/popover.png" width="340" alt="The Agenty popover with sample data: Claude at 42% of its 5-hour session and 64% of its weekly limit, Codex at 83% of its weekly limit">
 
@@ -10,7 +10,7 @@ A small macOS menu-bar app that shows how much of your Claude and Codex subscrip
 
 - Menu-bar glyph in three styles (bars, a single ring, or each provider's logo with its percentage) so you can see at a glance whether a limit is close.
 - Popover with every window, its percentage and its reset time, plus your plan and any credit balance.
-- Main window with Usage, Instructions and Config pages, opened with the Open Agenty button in the popover. Usage shows your Claude and Codex limits side by side.
+- Main window with Usage, Instructions and Config pages, opened with the Open Agenty button in the popover. Usage shows your Claude, Codex and Grok limits side by side.
 - Instructions page to edit `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` in Markdown. Save with the Save button or Command-S; Agenty creates the file if it is missing. Changes apply to new sessions. If Codex is using `AGENTS.override.md`, the page warns that it ignores `AGENTS.md`.
 - Usage turns orange and red at levels you choose, 80% and 95% by default.
 - Notifications at those levels and when a limit resets.
@@ -28,7 +28,7 @@ Open Settings with the gear in the popover.
 <img src="docs/images/settings.png" width="460" alt="The Notifications pane of the Agenty settings window">
 
 - **General:** launch at login, refresh interval, what the menu bar shows, the account email, and updates.
-- **Providers:** turn Claude and Codex on or off, and set the path to `codex` if Agenty does not find it on its own.
+- **Providers:** turn Claude, Codex and Grok on or off. Grok is off by default; turn it on here to track its usage. Set the path to `codex` or `grok` if Agenty does not find it on its own.
 - **Notifications:** turn notifications on or off, and set the warning and critical levels. The levels also set the usage colors, so they still apply with notifications off.
 
 ## Supported providers
@@ -37,15 +37,16 @@ Open Settings with the gear in the popover.
 |---|---|
 | Claude (Claude Code) | Supported |
 | Codex (Codex CLI) | Supported |
+| Grok (Grok CLI) | Supported, usage only |
 
 ## Requirements
 
 - macOS 27 on Apple Silicon (arm64 only)
-- Signed in to the CLIs you want to track: `claude` and `codex`
+- Signed in to the CLIs you want to track: `claude`, `codex` and `grok`
 
 ## Warning: unofficial APIs
 
-Agenty relies on endpoints and methods that are not public, documented APIs: `/api/oauth/usage` and `/api/oauth/profile` (Claude), and `codex app-server` (Codex). They can change or break at any time without notice.
+Agenty relies on endpoints and methods that are not public, documented APIs: `/api/oauth/usage` and `/api/oauth/profile` (Claude), `codex app-server` (Codex), and `_x.ai/billing` through `grok agent` (Grok). They can change or break at any time without notice.
 
 If Claude answers with a rate limit, Agenty says so in the popover and waits before asking again, even if you press Refresh.
 
@@ -54,6 +55,7 @@ If Claude answers with a rate limit, Agenty says so in the popover and waits bef
 - Your tokens never leave your machine, except in the requests sent to `api.anthropic.com` to read your Claude usage and your account email. The email is fetched again only when Agenty starts or Claude Code renews its token, and it is fetched even when the Settings toggle hides it.
 - The app never refreshes tokens. Claude Code refreshes its own login; if it has expired, open Claude Code once.
 - The app never reads `~/.codex/auth.json`. Codex is queried only through its own CLI, which manages its own credentials. The Codex account email comes from there too.
+- The app never reads `~/.grok/auth.json`. Grok is queried only through its own CLI, which manages its own credentials.
 - The app never sends prompts to any model.
 - Credentials are only read, never written or logged.
 - The update check reads `appcast.xml` from GitHub and sends no account data.
@@ -116,4 +118,4 @@ Build a release zip with `scripts/build-release.sh <version>`; the result is in 
 
 MIT. See [LICENSE](LICENSE).
 
-The Claude and Codex logos in `App/Assets.xcassets` are trademarks of Anthropic and OpenAI. They are not covered by the MIT license, and Agenty is not affiliated with or endorsed by either company. The SVG paths come from [lobehub/lobe-icons](https://github.com/lobehub/lobe-icons) (MIT).
+The Claude, Codex and Grok logos in `App/Assets.xcassets` are trademarks of Anthropic, OpenAI and xAI. They are not covered by the MIT license, and Agenty is not affiliated with or endorsed by any of these companies. The SVG paths come from [lobehub/lobe-icons](https://github.com/lobehub/lobe-icons) (MIT).
