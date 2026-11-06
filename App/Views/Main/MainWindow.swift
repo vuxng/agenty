@@ -10,7 +10,15 @@ struct MainWindow: View {
         Group {
             switch page {
             case .usage: UsagePage(store: model.store, onRetryKeychain: model.retryKeychainAccess)
-            case .instructions: Text(AppPage.instructions.title)
+            case .instructions:
+                if let document = model.instructions[model.selectedInstructions] {
+                    @Bindable var document = document
+                    // Temporary editor wiring; Task 7 supplies the Instructions page.
+                    InstructionsEditor(text: $document.draft,
+                                       tint: ProviderStyle.tint(model.selectedInstructions))
+                        .id(model.selectedInstructions)
+                        .onAppear { document.refresh() }
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
