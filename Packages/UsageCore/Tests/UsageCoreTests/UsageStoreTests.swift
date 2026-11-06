@@ -115,6 +115,28 @@ import Testing
         #expect(await b.fetchCount == 1)
     }
 
+    @Test func reenabledProviderFetchesInsideMinimumInterval() async {
+        let first = snap(.codex)
+        let second = snap(.codex, 20)
+        let stub = StubProvider(id: .codex, minimumInterval: .seconds(300),
+                                results: [.success(first), .success(second)])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        #expect(await stub.fetchCount == 1)
+        #expect(store.states[.codex] == .loaded(first))
+
+        clock.advance(by: .seconds(60))
+        store.configuration.enabled.remove(.codex)
+        await store.refreshAll()
+        #expect(store.states[.codex] == .idle)
+        #expect(await stub.fetchCount == 1)
+
+        store.configuration.enabled.insert(.codex)
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+        #expect(store.states[.codex] == .loaded(second))
+    }
+
     @Test func forceSkipsRateLimitedProviderOnly() async {
         let claude = StubProvider(id: .claude, results: [.failure(.rateLimited(retryAfter: nil))])
         let codex = StubProvider(id: .codex, results: [.success(snap(.codex))])

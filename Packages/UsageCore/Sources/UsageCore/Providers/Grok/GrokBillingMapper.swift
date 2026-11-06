@@ -7,7 +7,9 @@ public enum GrokBillingMapper {
               case .object = root else {
             throw .unexpectedFormat("grok result is not a JSON object")
         }
-        guard case .number(let used)? = root["config"]?["creditUsagePercent"] else {
+        // The views convert this to Int, which traps on a value that doesn't fit.
+        guard case .number(let used)? = root["config"]?["creditUsagePercent"],
+              used >= 0, Int(exactly: used.rounded()) != nil else {
             throw .unexpectedFormat("grok config has no creditUsagePercent")
         }
         let period = root["config"]?["currentPeriod"]

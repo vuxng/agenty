@@ -54,6 +54,23 @@ import Testing
         }
     }
 
+    @Test(arguments: ["1e20", "-1"])
+    func unsafePercentThrows(_ percent: String) {
+        #expect(throws: UsageError.unexpectedFormat("grok config has no creditUsagePercent")) {
+            try map("""
+            {"config":{"creditUsagePercent":\(percent),"currentPeriod":{"end":"2026-11-12T10:43:47Z"}}}
+            """)
+        }
+    }
+
+    @Test func overagePercentIsPreserved() throws {
+        let snap = try map("""
+        {"config":{"creditUsagePercent":150,"currentPeriod":{"end":"2026-11-12T10:43:47Z"}}}
+        """)
+        #expect(snap.windows == [UsageWindow(kind: .billingPeriod, usedPercent: 150,
+            resetsAt: Date(timeIntervalSince1970: 1_794_480_227))])
+    }
+
     @Test(arguments: ["", #""end":"not a date""#, #""end":null"#, #""end":7"#,
                       #""end":false"#, #""end":[]"#, #""end":{}"#])
     func missingOrInvalidEndThrows(_ end: String) {
