@@ -41,6 +41,7 @@ import Testing
         #expect(store.states[.claude] == .loaded(snap(.claude)))
         #expect(store.states[.codex] == .loaded(snap(.codex)))
         #expect(store.lastRefreshAt == clock.now())
+        #expect(store.states[.grok] == nil)
     }
 
     @Test func failureIsolatedPerProvider() async {
@@ -196,6 +197,21 @@ import Testing
         #expect(!store.isStale(.claude))
         clock.advance(by: .seconds(2))
         #expect(store.isStale(.claude))
+    }
+
+    @Test func staleUsesProviderMinimumInterval() async {
+        var config = StoreConfiguration()
+        config.refreshInterval = .seconds(60)
+        let store = makeStore([
+            StubProvider(id: .codex, minimumInterval: .seconds(300), results: [.success(snap(.codex))]),
+        ], config: config)
+        await store.refreshAll()
+        clock.advance(by: .seconds(299))
+        #expect(!store.isStale(.codex))
+        clock.advance(by: .seconds(601))
+        #expect(!store.isStale(.codex))
+        clock.advance(by: .seconds(1))
+        #expect(store.isStale(.codex))
     }
 
     @Test func notifiesOnceAcrossStoreInstances() async {

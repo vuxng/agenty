@@ -13,6 +13,8 @@ public struct Credits: Sendable, Hashable {
 public struct UsageSnapshot: Sendable, Hashable {
     public var provider: ProviderID
     public var plan: String?
+    /// Lowercase plan ids ("max") get a capital; names the provider already styled ("SuperGrok Plus") stay as they are.
+    public var displayPlan: String? { plan.map { $0 == $0.lowercased() ? $0.capitalized : $0 } }
     public var windows: [UsageWindow]
     public var credits: Credits?
     public var fetchedAt: Date

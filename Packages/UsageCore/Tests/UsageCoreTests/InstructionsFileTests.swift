@@ -3,6 +3,12 @@ import Testing
 @testable import UsageCore
 
 @Suite struct InstructionsFileTests {
+    @Test func grokHasNoInstructionsFile() async {
+        await #expect(processExitsWith: .failure) {
+            _ = InstructionsFile(provider: .grok, home: URL(filePath: "/unused"))
+        }
+    }
+
     @Test func pathsPerProvider() throws {
         try withTemporaryHome { home in
             let claude = InstructionsFile(provider: .claude, home: home)

@@ -543,6 +543,16 @@
         }
       }
     },
+    "Not signed in — run `grok login`" : {
+      "localizations" : {
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chưa đăng nhập — chạy `grok login`"
+          }
+        }
+      }
+    },
     "Notifications" : {
       "localizations" : {
         "vi" : {

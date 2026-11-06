@@ -13,6 +13,9 @@ struct ProvidersPane: View {
             if providers.contains(.codex) {
                 ProviderPathSection(provider: .codex, locator: locator)
             }
+            if providers.contains(.grok) {
+                ProviderPathSection(provider: .grok, locator: locator)
+            }
         }
         .settingsPaneLayout()
     }
@@ -24,7 +27,7 @@ private struct ProviderToggle: View {
 
     init(provider: ProviderID) {
         self.provider = provider
-        _enabled = AppStorage(wrappedValue: true, SettingsKey.providerEnabled(provider))
+        _enabled = AppStorage(wrappedValue: AppDefaults.isEnabledByDefault(provider), SettingsKey.providerEnabled(provider))
     }
 
     var body: some View {

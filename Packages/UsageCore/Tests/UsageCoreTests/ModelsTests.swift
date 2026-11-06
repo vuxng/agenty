@@ -3,6 +3,19 @@ import Testing
 @testable import UsageCore
 
 @Suite struct ModelsTests {
+    @Test func grokIsUsageOnly() {
+        #expect(ProviderID.grok.displayName == "Grok")
+        #expect(ProviderID.allCases == [.claude, .codex, .grok])
+        #expect(ProviderID.configurable == [.claude, .codex])
+        #expect(!ProviderID.configurable.contains(.grok))
+    }
+
+    @Test(arguments: ["max", "SuperGrok Plus", nil] as [String?])
+    func displayPlanPreservesProviderStyling(_ plan: String?) {
+        let snapshot = UsageSnapshot(provider: .claude, plan: plan, windows: [], credits: nil, fetchedAt: .distantPast)
+        #expect(snapshot.displayPlan == (plan == "max" ? "Max" : plan))
+    }
+
     @Test func windowKindStorageKeys() {
         #expect(WindowKind.session5h.storageKey == "session5h")
         #expect(WindowKind.weekly.storageKey == "weekly")

@@ -46,6 +46,12 @@ struct CLILocatorTests {
         #expect(url?.path == "/Users/test/.local/bin/codex")
     }
 
+    @Test func grokBinDirectoryIsSearched() async {
+        let l = locator(["/Users/test/.grok/bin/grok"], shell: FakeShell(result: nil))
+        let url = await l.locate("grok", override: nil)
+        #expect(url?.path == "/Users/test/.grok/bin/grok")
+    }
+
     @Test func loginShellUsedLastAndCached() async {
         let shell = FakeShell(result: "/custom/codex")
         let l = locator(shell: shell)

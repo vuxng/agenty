@@ -72,7 +72,8 @@ public final class UsageStore {
 
     public func isStale(_ id: ProviderID) -> Bool {
         guard let fetchedAt = states[id]?.snapshot?.fetchedAt else { return false }
-        return now().timeIntervalSince(fetchedAt) > 3 * configuration.refreshInterval.seconds
+        let interval = max(configuration.refreshInterval, providers[id]?.minimumInterval ?? .zero)
+        return now().timeIntervalSince(fetchedAt) > 3 * interval.seconds
     }
 
     public func refreshIfOlder(than age: Duration) async {
