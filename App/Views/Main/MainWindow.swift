@@ -23,13 +23,13 @@ struct MainWindow: View {
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 2) {
+                HStack(spacing: 4) {
                     ForEach(AppPage.allCases) { item in
                         Button { page = item } label: {
                             Text(item.title)
                                 .font(.callout.weight(page == item ? .semibold : .regular))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 5)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 4)
                                 .background(page == item ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .capsule)
                                 .contentShape(.capsule)
                         }
