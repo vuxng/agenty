@@ -11,6 +11,7 @@ enum SettingsPane: String {
 }
 
 enum SettingsKey {
+    static let mainPage = "mainPage"
     static let settingsPane = "settingsPane"
     static let menuBarStyle = "menuBarStyle"
     static let refreshMinutes = "refreshMinutes"

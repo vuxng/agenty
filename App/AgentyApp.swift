@@ -12,6 +12,15 @@ struct AgentyApp: App {
         }
         .menuBarExtraStyle(.window)
 
+        Window("Agenty", id: "main") {
+            MainWindow(model: model)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified)
+        .windowBackgroundDragBehavior(.enabled)
+        .defaultSize(width: 980, height: 640)
+        .defaultLaunchBehavior(.suppressed)
+
         Settings {
             SettingsView(model: model)
         }

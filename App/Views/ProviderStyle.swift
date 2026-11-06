@@ -2,6 +2,14 @@ import SwiftUI
 import UsageCore
 
 enum ProviderStyle {
+    /// Provider colors for the ambient background and Markdown marks.
+    static func tint(_ p: ProviderID) -> Color {
+        switch p {
+        case .claude: Color(red: 217.0 / 255, green: 120.0 / 255, blue: 87.0 / 255)
+        case .codex: Color(red: 107.0 / 255, green: 107.0 / 255, blue: 242.0 / 255)
+        }
+    }
+
     /// Single-color logo that takes the foreground style, for the menu bar.
     static func logo(_ p: ProviderID) -> Image {
         switch p {

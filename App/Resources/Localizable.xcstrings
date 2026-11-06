@@ -135,6 +135,22 @@
         }
       }
     },
+    "Agenty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty"
+          }
+        }
+      }
+    },
     "Agenty %@ is available" : {
       "localizations" : {
         "en" : {
@@ -359,6 +375,22 @@
         }
       }
     },
+    "Instructions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instructions"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chỉ dẫn"
+          }
+        }
+      }
+    },
     "Keychain access denied — allow Agenty to read “Claude Code-credentials”" : {
       "localizations" : {
         "vi" : {
@@ -505,6 +537,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "Open Agenty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Agenty"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở Agenty"
           }
         }
       }
@@ -673,6 +721,12 @@
     },
     "Usage" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage"
+          }
+        },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
