@@ -108,30 +108,44 @@ public final class ConfigDocument {
             return
         }
         hasConflict = false
-        guard text != diskText || force || !hasLoaded else { return }
+        guard text != diskText || force || !hasLoaded || loadError != nil else { return }
         diskText = text
         if !dirty { fileDraft = text ?? "" }
         await load()
     }
 
     public func save() async {
+        guard !isSaving else { return }
+        isSaving = true
+        notice = nil
+        saveError = nil
+        let submittedEdits = edits
         while isRefreshing {
             await withCheckedContinuation { refreshWaiters.append($0) }
         }
-        notice = nil
-        guard !isSaving else { return }
-        saveError = nil
-        isSaving = true
-        defer { isSaving = false }
+        let result = await write(submittedEdits: submittedEdits)
+        isSaving = false
+        guard result.succeeded else { return }
+        await refresh(force: true)
+        notice = result.notice
+    }
+
+    private func write(submittedEdits: [ConfigEdit]) async -> (succeeded: Bool, notice: ConfigNotice?) {
         do {
             let savedNotice: ConfigNotice?
             switch mode {
             case .controls:
+                if loadError != nil {
+                    guard try readFile() == diskText else {
+                        hasConflict = true
+                        return (false, nil)
+                    }
+                    await load()
+                }
                 if let loadError {
                     saveError = loadError
-                    return
+                    return (false, nil)
                 }
-                let submittedEdits = edits
                 let result = try await backend.save(submittedEdits, version: version)
                 edits.removeAll { submittedEdits.contains($0) }
                 diskText = try readFile()
@@ -139,24 +153,23 @@ public final class ConfigDocument {
             case .file:
                 guard try readFile() == diskText else {
                     hasConflict = true
-                    return
+                    return (false, nil)
                 }
                 let text = fileDraft
                 let validation = try await backend.validate(text)
                 guard try readFile() == diskText else {
                     hasConflict = true
-                    return
+                    return (false, nil)
                 }
                 try await backend.writeFile(text)
                 diskText = text
                 savedNotice = validation == .unchecked ? .fileNotChecked : nil
             }
-            isSaving = false
-            await refresh(force: true)
-            notice = savedNotice
+            return (true, savedNotice)
         } catch {
             if error == .conflict { hasConflict = true }
             else { saveError = error }
+            return (false, nil)
         }
     }
 
@@ -202,7 +215,7 @@ public final class ConfigDocument {
 
     private func load() async {
         isRefreshing = true
-        isLoading = config == nil
+        isLoading = config == nil && loadError == nil
         defer {
             isRefreshing = false
             isLoading = false

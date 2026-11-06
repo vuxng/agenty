@@ -55,6 +55,83 @@ import Testing
         }
     }
 
+    @Test func refreshRetriesFailedLoadWhenFileIsUnchanged() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.failure(.readFailed("reload failed")))
+            await document.refresh(force: true)
+            #expect(document.loadError == .readFailed("reload failed"))
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await document.refresh()
+            #expect(document.loadError == nil)
+            #expect(document.edits == [edit])
+            #expect(await backend.loadCount == 3)
+            await document.refresh()
+            #expect(await backend.loadCount == 3)
+        }
+    }
+
+    @Test func saveRetriesFailedLoadBeforeWriting() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.failure(.readFailed("reload failed")))
+            await document.refresh(force: true)
+            #expect(document.loadError == .readFailed("reload failed"))
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await document.save()
+            #expect(await backend.saveCalls == [.init(edits: [edit], version: "v2")])
+            #expect(document.saveError == nil)
+            #expect(document.loadError == nil)
+            #expect(!document.isDirty)
+            #expect(!document.isSaving)
+        }
+    }
+
+    @Test func saveRetryStopsOnExternalChange() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            let edit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(edit.value, at: edit.path)
+            await backend.setLoadResult(.failure(.readFailed("reload failed")))
+            await document.refresh(force: true)
+            #expect(document.loadError == .readFailed("reload failed"))
+            #expect(await backend.loadCount == 2)
+            try backend.file.write("external")
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await document.save()
+            #expect(document.hasConflict)
+            #expect(await backend.saveCalls.isEmpty)
+            #expect(await backend.loadCount == 2)
+            #expect(document.edits == [edit])
+            #expect(document.diskText == "original")
+            #expect(document.saveError == nil)
+            #expect(!document.isSaving)
+        }
+    }
+
+    @Test func retryAfterFailedLoadDoesNotSetLoading() async throws {
+        try await withDocument { backend, document in
+            await backend.setLoadResult(.failure(.invalidFile("broken")))
+            await document.refresh()
+            #expect(document.config == nil)
+            #expect(document.loadError == .invalidFile("broken"))
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await backend.blockLoad()
+            let refreshing = Task { await document.refresh() }
+            await backend.waitForLoad()
+            #expect(!document.isLoading)
+            await backend.releaseLoad()
+            await refreshing.value
+            #expect(document.loadError == nil)
+            #expect(document.config == Self.config())
+            #expect(!document.isLoading)
+        }
+    }
+
     @Test func brokenFileStillOpensInFileMode() async throws {
         try await withDocument(content: "{broken") { backend, document in
             await backend.setLoadResult(.failure(.invalidFile("broken")))
@@ -289,6 +366,61 @@ import Testing
             #expect(await backend.saveCalls == expected)
             #expect(!document.isDirty)
             #expect(document.saveError == nil)
+        }
+    }
+
+    @Test func saveSubmitsOnlyEditsFromRequestTime() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            await backend.setLoadResult(.success(.init(config: Self.config(), version: "v2")))
+            await backend.blockLoad()
+            let refreshing = Task { await document.refresh(force: true) }
+            await backend.waitForLoad()
+            let safeEdit = ConfigEdit(path: effort.path, value: .string("low"))
+            document.set(safeEdit.value, at: safeEdit.path)
+            var saving: Task<Void, Never>?
+            await withCheckedContinuation { started in
+                saving = Task { @MainActor in
+                    started.resume()
+                    await document.save()
+                }
+            }
+            #expect(document.isSaving)
+            let riskyEdit = ConfigEdit(path: permission, value: .string("bypassPermissions"))
+            document.set(riskyEdit.value, at: riskyEdit.path)
+            await backend.releaseLoad()
+            await refreshing.value
+            await saving?.value
+            #expect(await backend.saveCalls == [.init(edits: [safeEdit], version: "v2")])
+            #expect(document.edits == [riskyEdit])
+            #expect(document.dangerousEdits == [riskyEdit])
+            #expect(!document.isSaving)
+        }
+    }
+
+    @Test func secondSaveKeepsItsFlagThroughFirstRefresh() async throws {
+        try await withDocument { backend, document in
+            await document.refresh()
+            document.set(.bool(true), at: ["fast"])
+            await backend.blockLoad()
+            let firstSave = Task { await document.save() }
+            await backend.waitForLoad()
+            document.set(.string("low"), at: effort.path)
+            await backend.blockSave()
+            var secondSave: Task<Void, Never>?
+            await withCheckedContinuation { started in
+                secondSave = Task { @MainActor in
+                    started.resume()
+                    await document.save()
+                }
+            }
+            await backend.releaseLoad()
+            await backend.waitForSave()
+            await firstSave.value
+            #expect(document.isSaving)
+            await backend.releaseSave()
+            await secondSave?.value
+            #expect(!document.isSaving)
         }
     }
 
