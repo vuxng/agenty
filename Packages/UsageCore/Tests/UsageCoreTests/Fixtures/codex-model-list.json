@@ -1,0 +1,10 @@
+{
+  "data": [{
+    "id": "catalog-id", "model": "gpt-test", "displayName": "Test Model", "description": "Test model",
+    "isDefault": true, "hidden": false, "defaultReasoningEffort": "medium",
+    "supportedReasoningEfforts": [{"reasoningEffort": "low", "description": "Less reasoning"}, {"reasoningEffort": "high", "description": "More reasoning"}],
+    "serviceTiers": [{"id": "priority", "name": "Fast", "description": "2x speed, increased usage"}],
+    "additionalSpeedTiers": [], "defaultServiceTier": null
+  }],
+  "nextCursor": null
+}

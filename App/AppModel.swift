@@ -10,7 +10,9 @@ final class AppModel {
     let notifier = UserNotifier()
     let updater = Updater()
     let instructions: [ProviderID: InstructionsDocument]
-    var selectedInstructions: ProviderID = .claude
+    let configs: [ProviderID: ConfigDocument]
+    var pendingRiskySave: ProviderID?
+    var selectedProvider: ProviderID = .claude
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let loop: RefreshLoop
@@ -29,6 +31,17 @@ final class AppModel {
         let runner = SubprocessRunner()
         let locator = CLILocator(home: home, shell: ZshLoginShellLookup(runner: runner))
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+
+        self.configs = [
+            .claude: ConfigDocument(backend: ClaudeConfigBackend(home: home, locator: locator, runner: runner)),
+            .codex: ConfigDocument(backend: CodexConfigBackend(
+                locator: locator,
+                pathOverride: { UserDefaults.standard.string(forKey: SettingsKey.providerPath(.codex)) },
+                runner: runner,
+                clientVersion: version,
+                home: home
+            )),
+        ]
 
         let gate = KeychainAccessGate()
         let claude = ClaudeProvider(
@@ -57,6 +70,16 @@ final class AppModel {
         self.loop = RefreshLoop(store: store)
         self.lastPaths = currentPaths()
         start()
+    }
+
+    func requestConfigSave() {
+        guard let document = configs[selectedProvider] else { return }
+        if document.dangerousEdits.isEmpty {
+            pendingRiskySave = nil
+            Task { await document.save() }
+        } else {
+            pendingRiskySave = selectedProvider
+        }
     }
 
     func start() {

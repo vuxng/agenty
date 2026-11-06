@@ -10,12 +10,12 @@ struct InstructionsPage: View {
 
     var body: some View {
         Group {
-            if let document = model.instructions[model.selectedInstructions] {
+            if let document = model.instructions[model.selectedProvider] {
                 manuscript(document)
             }
         }
         .onAppear { refresh() }
-        .onChange(of: model.selectedInstructions) {
+        .onChange(of: model.selectedProvider) {
             editorIsFocused = false
             refresh()
         }
@@ -25,9 +25,10 @@ struct InstructionsPage: View {
     }
 
     private func manuscript(_ document: InstructionsDocument) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        @Bindable var model = model
+        return VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                providerSelector
+                ProviderSelector(selection: $model.selectedProvider)
                 Text(verbatim: document.file.fileName)
                     .font(.system(size: 52, weight: .thin, design: .rounded))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -37,7 +38,7 @@ struct InstructionsPage: View {
                 Text(verbatim: document.file.displayPath)
                     .font(.caption.monospaced())
                 Button("Show in Finder", systemImage: "folder") {
-                    showInFinder(document.file.url)
+                    Finder.show(document.file.url)
                 }
                 .labelStyle(.iconOnly)
                 .buttonStyle(.borderless)
@@ -65,7 +66,7 @@ struct InstructionsPage: View {
                     } else {
                         Text("This file isn't plain text, so Agenty can't edit it.")
                     }
-                    Button("Show in Finder") { showInFinder(document.file.url) }
+                    Button("Show in Finder") { Finder.show(document.file.url) }
                 }
                 .padding(.top, 24)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -85,33 +86,6 @@ struct InstructionsPage: View {
                     .padding(.bottom, 24)
             }
         }
-    }
-
-    private var providerSelector: some View {
-        HStack(spacing: 4) {
-            ForEach(ProviderID.allCases, id: \.self) { provider in
-                let selected = model.selectedInstructions == provider
-                Button { model.selectedInstructions = provider } label: {
-                    HStack(spacing: 8) {
-                        ProviderStyle.brandLogo(provider)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
-                        Text(verbatim: provider.displayName)
-                            .font(.callout.weight(selected ? .semibold : .regular))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(selected
-                                ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .capsule)
-                    .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(4)
-        .glassEffect(.regular, in: .capsule)
     }
 
     private func editor(_ document: InstructionsDocument) -> some View {
@@ -144,19 +118,6 @@ struct InstructionsPage: View {
     }
 
     private func refresh() {
-        model.instructions[model.selectedInstructions]?.refresh()
-    }
-
-    private func showInFinder(_ url: URL) {
-        let manager = FileManager.default
-        if manager.fileExists(atPath: url.path) {
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-        } else {
-            let parent = url.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: parent.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                NSWorkspace.shared.open(parent)
-            }
-        }
+        model.instructions[model.selectedProvider]?.refresh()
     }
 }

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "formatter@tools",
+    "version": "1.0.0",
+    "scope": "user",
+    "enabled": true,
+    "installPath": "/tmp/claude-test-plugins/formatter"
+  },
+  {
+    "id": "reviewer@tools",
+    "version": "2.0.0",
+    "scope": "synced",
+    "enabled": false,
+    "installPath": "/tmp/claude-test-plugins/reviewer"
+  }
+]

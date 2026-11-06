@@ -1,0 +1,8 @@
+{
+  "marketplaces": [{"name": "tools", "path": "/tmp/agenty-marketplace", "interface": null, "plugins": [
+    {"id": "formatter@tools", "installed": true, "enabled": true, "interface": {"displayName": "Formatter"}},
+    {"id": "x.y@tools", "installed": true, "enabled": false, "interface": {}},
+    {"id": "uninstalled@tools", "installed": false, "enabled": false, "interface": {"displayName": "Not installed"}}
+  ]}],
+  "marketplaceLoadErrors": []
+}

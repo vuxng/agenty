@@ -44,6 +44,7 @@ các cỡ hiển thị lớn ghi trong bảng.
 |---|---|---|
 | Số lớn | 112pt, thin, rounded, `.monospacedDigit()` | Giới hạn gần chạm nhất của provider |
 | Tên file | 52pt, thin, rounded | Trang Instructions |
+| Tên model | 52pt, thin, rounded | Hero trang Config |
 | Tên provider | `.title3`, semibold | Đầu thẻ |
 | Nhãn khối | `.headline`, `.secondary` | Tên giới hạn trên số lớn |
 | Nội dung | `.body` | Text thường |
@@ -66,12 +67,14 @@ Riêng popover còn dùng `.subheadline.weight(.medium)`, `.callout`,
 | `UsagePopover` | Template | Xem nhanh từ menu bar | — |
 | Settings panes | Template | Cài đặt, dùng `Form` grouped | General, Providers, Notifications |
 | Thẻ provider | Component | Một provider trong cửa sổ chính | Bình thường, cảnh báo, số cũ, không có số |
+| Thẻ cấu hình | Component | Nhóm cấu hình, cùng chất liệu `.thinMaterial`, bo góc 24pt và padding 24pt như thẻ provider | Model, quyền, sandbox, plugin |
 | Bộ chọn provider | Component | Tab glass có logo và tên, canh trái ngay trên tên file | Đang chọn, không chọn |
-| Viên lưu | Component | Glass nổi ở đáy, nơi duy nhất cho việc lưu | Chưa lưu, xung đột, lưu lỗi |
+| Viên lưu | Component | Glass nổi ở đáy, nơi duy nhất cho việc lưu | Chưa lưu, xung đột, lưu lỗi, lỗi kiểm tra |
 | Trang Usage | Template | Các thẻ provider cạnh nhau | — |
 | Trang Instructions | Template | File nằm thẳng trên trường màu | — |
+| Trang Config | Template | Cấu hình của provider đang chọn | Điều khiển, File |
 
-Ưu tiên control SwiftUI có sẵn: `Button`, `Toggle`, `Picker`, `Stepper`, `ProgressView`,
+Ưu tiên control SwiftUI có sẵn: `Button`, `Toggle`, `Picker`, `Slider`, `Menu`, `Stepper`, `ProgressView`,
 `ContentUnavailableView`, `Label`.
 
 ## 5. Layout
@@ -98,7 +101,7 @@ giữ nguyên kích thước và khoảng cách hiện tại.
 ## 6. Depth
 
 Không có shadow tự đặt. Thẻ dùng `.thinMaterial`, bo góc 24pt, control dùng mặc định của hệ thống.
-Liquid Glass chỉ dùng cho lớp điều khiển nổi: toolbar, bộ chọn provider, viên lưu.
+Liquid Glass chỉ dùng cho lớp điều khiển nổi: toolbar, bộ chọn provider, nút Điều khiển / File, viên lưu.
 Không dùng cho thẻ hay vùng nội dung.
 
 ## 7. Do's and Don'ts

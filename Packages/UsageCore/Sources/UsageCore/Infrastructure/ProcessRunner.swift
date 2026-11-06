@@ -15,4 +15,17 @@ public protocol ProcessRunner: Sendable {
         environment: [String: String],
         body: @Sendable (any LineChannel) async throws -> R
     ) async throws -> R
+
+    /// When requested, throws `ProcessRunnerError.unsuccessfulExit` after unsuccessful termination.
+    func run<R: Sendable>(
+        executable: URL,
+        arguments: [String],
+        environment: [String: String],
+        requireSuccessfulExit: Bool,
+        body: @Sendable (any LineChannel) async throws -> R
+    ) async throws -> R
+}
+
+public enum ProcessRunnerError: Error, Sendable, Equatable {
+    case unsuccessfulExit
 }

@@ -1,0 +1,8 @@
+{
+  "config": {"model": "system-model", "service_tier": "flex"},
+  "origins": {},
+  "layers": [
+    {"name": {"type": "system", "file": "/tmp/agenty-system/config.toml"}, "version": "sha256:system", "config": {"model": "system-model", "service_tier": "flex"}},
+    {"name": {"type": "user", "file": "/tmp/agenty-user/config.toml", "profile": null}, "version": "sha256:user", "config": {"model": "gpt-test", "model_reasoning_effort": "high", "sandbox_mode": "workspace-write", "approval_policy": "on-request"}}
+  ]
+}

@@ -18,6 +18,17 @@ public struct SubprocessRunner: ProcessRunner {
         environment: [String: String],
         body: @Sendable (any LineChannel) async throws -> R
     ) async throws -> R {
+        try await run(executable: executable, arguments: arguments, environment: environment,
+                      requireSuccessfulExit: false, body: body)
+    }
+
+    public func run<R: Sendable>(
+        executable: URL,
+        arguments: [String],
+        environment: [String: String],
+        requireSuccessfulExit: Bool,
+        body: @Sendable (any LineChannel) async throws -> R
+    ) async throws -> R {
         _ = Self.ignoreSIGPIPE
         var platformOptions = PlatformOptions()
         platformOptions.teardownSequence = [.gracefulShutDown(allowedDurationToNextStep: .seconds(3))]
@@ -34,9 +45,12 @@ public struct SubprocessRunner: ProcessRunner {
         ) { execution in
             let channel = Channel(
                 writer: execution.standardInputWriter,
-                lines: execution.standardOutput.strings().makeAsyncIterator()
+                lines: execution.standardOutput.strings(bufferingPolicy: .maxLineLength(16 * 1024 * 1024)).makeAsyncIterator()
             )
             return try await body(channel)
+        }
+        if requireSuccessfulExit && !result.terminationStatus.isSuccess {
+            throw ProcessRunnerError.unsuccessfulExit
         }
         return result.closureResult
     }
