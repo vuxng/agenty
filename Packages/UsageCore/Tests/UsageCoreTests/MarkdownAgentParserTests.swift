@@ -51,6 +51,26 @@ import Testing
     @Test func literalScalarIsBlock() {
         #expect(parse("---\nname: x\ninitialPrompt: |\n  Hello\n  World\n---")?.fields == [AgentField(key: "initialPrompt", value: .block("Hello\nWorld"))])
     }
+    @Test func indentedSeparatorStaysInsideLiteralScalar() throws {
+        let agent = try #require(parse("---  \nname: x\ninitialPrompt: |\n  hello\n  ---\n  world\n--- \nBody"))
+        #expect(agent.fields == [AgentField(key: "initialPrompt", value: .block("hello\n---\nworld"))])
+        #expect(agent.prompt == "Body")
+        #expect(!agent.isLineScanned)
+        #expect(parse("  ---\nname: x\n---") == nil)
+    }
+    @Test func columnZeroCommentPreservesNestedMapping() throws {
+        let agent = try #require(parse("---\nname: x\nhooks:\n  Start: []\n# comment\n  Stop: []\ntools: Read\n---"))
+        #expect(agent.fields == [
+            AgentField(key: "hooks", value: .block("  Start: []\n# comment\n  Stop: []")),
+            AgentField(key: "tools", value: .text("Read")),
+        ])
+        #expect(!agent.isLineScanned)
+    }
+    @Test func quotedScalarPreservesTrailingWhitespace() throws {
+        let agent = try #require(parse("---\nname: x\nsuffix: \"value  \"\n---"))
+        #expect(agent.fields == [AgentField(key: "suffix", value: .text("value  "))])
+        #expect(!agent.isLineScanned)
+    }
     @Test func sequenceOfMappingsIsBlock() {
         #expect(parse("---\nname: x\nskills:\n  - name: a\n    enabled: false\n---")?.fields == [AgentField(key: "skills", value: .block("- name: a\n  enabled: false"))])
     }

@@ -6,9 +6,9 @@ public enum MarkdownAgentParser {
         var normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         if normalized.first == "\u{FEFF}" { normalized.removeFirst() }
         let lines = normalized.components(separatedBy: "\n")
-        guard lines.first?.trimmingCharacters(in: .whitespaces) == "---",
+        guard lines.first.map { trimEnd($0) } == "---",
               let end = lines.indices.dropFirst().first(where: {
-                  lines[$0].trimmingCharacters(in: .whitespaces) == "---"
+                  trimEnd(lines[$0]) == "---"
               }) else { return nil }
         let header = Array(lines[1..<end])
         var body = Array(lines.dropFirst(end + 1))
@@ -24,7 +24,7 @@ public enum MarkdownAgentParser {
                 let fieldValue: AgentFieldValue
                 switch value {
                 case .scalar(let scalar):
-                    let string = trimEnd(scalar.string)
+                    let string = scalar.string.contains("\n") ? trimEnd(scalar.string) : scalar.string
                     fieldValue = scalar.string.contains("\n") ? .block(string) : .text(string)
                 case .sequence(let sequence):
                     let strings = sequence.compactMap { node -> String? in
@@ -67,7 +67,7 @@ public enum MarkdownAgentParser {
         let inline = String(lines[index][lines[index].index(after: colon)...]).trimmingCharacters(in: .whitespaces)
         var nested: [String] = []
         for line in lines.dropFirst(index + 1) {
-            if !line.isEmpty && line.first != " " && line.first != "\t" { break }
+            if !line.isEmpty && line.first != " " && line.first != "\t" && line.first != "#" { break }
             nested.append(line)
         }
         while nested.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { nested.removeLast() }
