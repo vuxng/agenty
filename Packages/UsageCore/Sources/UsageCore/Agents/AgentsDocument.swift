@@ -7,25 +7,32 @@ public final class AgentsDocument {
     public private(set) var loadError: AgentLoadError?
     public private(set) var isLoading = false
 
-    private var isRefreshing = false
+    @ObservationIgnored private var loadTask: Task<Void, Never>?
 
     public init(source: any AgentSource) {
         self.source = source
     }
 
     public func refresh() async {
-        guard !isRefreshing else { return }
-        isRefreshing = true
+        if let loadTask {
+            await loadTask.value
+            return
+        }
         isLoading = listing == nil && loadError == nil
-        defer {
-            isRefreshing = false
-            isLoading = false
+        // The document owns the load, so cancelling a view's waiter cannot cancel it.
+        let task = Task { @MainActor in
+            defer {
+                loadTask = nil
+                isLoading = false
+            }
+            do throws(AgentLoadError) {
+                listing = try await source.load()
+                loadError = nil
+            } catch {
+                loadError = error
+            }
         }
-        do {
-            listing = try await source.load()
-            loadError = nil
-        } catch {
-            loadError = error
-        }
+        loadTask = task
+        await task.value
     }
 }

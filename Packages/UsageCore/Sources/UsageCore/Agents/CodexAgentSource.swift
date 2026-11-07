@@ -46,11 +46,20 @@ public struct CodexAgentSource: AgentSource {
                         let config = temporary.appendingPathComponent("config.toml")
                         try Data(text.utf8).write(to: config)
                         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+                    } catch {
+                        agents.append(.unreadable(url: url, error: .failed(Self.sanitized(
+                            String(describing: error), temporary: temporary, agent: url))))
+                        continue
+                    }
+                    do {
                         let response = try await rpc.callOrdered("config/read", params: .object(["includeLayers": .bool(true)]))
                         if let agent = Self.agent(from: response, url: url) { agents.append(agent) }
                     } catch JSONRPCError.server(_, let message, _) {
                         agents.append(.unreadable(url: url, error: .failed(Self.sanitized(
                             message, temporary: temporary, agent: url))))
+                    } catch let error as OrderedJSONError {
+                        agents.append(.unreadable(url: url, error: .failed(Self.sanitized(
+                            String(describing: error), temporary: temporary, agent: url))))
                     } catch {
                         throw AgentLoadError.failed(Self.sanitized(String(describing: error),
                                                                   temporary: temporary, agent: url))
@@ -107,6 +116,7 @@ public struct CodexAgentSource: AgentSource {
         case .number(let literal): return .text(literal)
         case .bool(let flag): return .text(flag ? "true" : "false")
         case .array(let values):
+            if values.isEmpty { return .text("[]") }
             let scalars = values.compactMap { value -> String? in
                 guard case .text(let text) = fieldValue(value) else { return nil }
                 // Nested arrays must remain structured even when their elements are simple.

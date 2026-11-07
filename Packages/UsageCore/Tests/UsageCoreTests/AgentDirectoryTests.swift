@@ -57,9 +57,9 @@ struct AgentTestFolder {
     }
     @Test func displayPathUsesTilde() {
         let f = AgentTestFolder()
-        #expect(try f.directory().displayPath(of: f.home.appendingPathComponent(".claude/agents/x.md")) == "~/.claude/agents/x.md")
+        #expect(f.directory().displayPath(of: f.home.appendingPathComponent(".claude/agents/x.md")) == "~/.claude/agents/x.md")
         let outside = URL(fileURLWithPath: f.home.path + "-other/x.md")
-        #expect(try f.directory().displayPath(of: outside) == outside.path)
+        #expect(f.directory().displayPath(of: outside) == outside.path)
     }
     @Test func emptyFolderIsEmpty() throws {
         let f = AgentTestFolder(); defer { f.clean() }

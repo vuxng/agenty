@@ -113,6 +113,71 @@ import Testing
         #expect(listing.agents.isEmpty)
     }
 
+    @Test func unparsableSecondResponseKeepsFirstAndThirdAgents() async throws {
+        defer { try? FileManager.default.removeItem(at: home) }
+        let first = try write("a.toml")
+        let bad = try write("b.toml")
+        let last = try write("c.toml")
+        // JSONDecoder accepts this trailing comma, but OrderedJSON rejects it.
+        let channel = channel(configs: [#"{"name":"a"}"#, #"{"name":"b",}"#, #"{"name":"c"}"#])
+        let (source, runner) = source(channel)
+        let listing = try await source.load()
+        #expect(listing.agents.map(\.url) == [first, bad, last])
+        #expect(listing.agents.map(\.name) == ["a", "b", "c"])
+        #expect(listing.agents.first?.readError == nil)
+        let unreadable = try #require(listing.agents.first { $0.url == bad })
+        guard case .failed(let message) = unreadable.readError else {
+            Issue.record("Expected failed read for unparsable response"); return
+        }
+        #expect(message.contains("Expected an object key"))
+        #expect(listing.agents.last?.readError == nil)
+        #expect(channel.sent.filter { $0["method"] == .string("config/read") }.count == 3)
+        #expect(runner.runCount == 1)
+        let path = try #require(runner.environment["CODEX_HOME"])
+        #expect(!message.contains(path))
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
+
+    @Test func temporaryConfigWriteFailuresBecomeUnreadableCards() async throws {
+        defer { try? FileManager.default.removeItem(at: home) }
+        let first = try write("a.toml")
+        let second = try write("b.toml")
+        let reference = Mutex<FakeProcessRunner?>(nil)
+        defer { reference.withLock { $0 = nil } }
+        let channel = ScriptedChannel { request in
+            guard request["method"] == .string("initialize") else { return [] }
+            do {
+                let path = try #require(reference.withLock { $0?.environment["CODEX_HOME"] })
+                try FileManager.default.createDirectory(at: URL(filePath: path).appending(path: "config.toml"),
+                                                        withIntermediateDirectories: false)
+            } catch { Issue.record(error) }
+            return [#"{"id":1,"result":{}}"#]
+        }
+        let (source, runner) = source(channel)
+        reference.withLock { $0 = runner }
+        let listing = try await source.load()
+        #expect(listing.agents.map(\.url) == [first, second])
+        let path = try #require(runner.environment["CODEX_HOME"])
+        for agent in listing.agents {
+            guard case .failed(let message) = agent.readError else {
+                Issue.record("Expected failed read for temporary config write"); continue
+            }
+            #expect(!message.contains(path))
+            #expect(!message.contains(URL(filePath: path).resolvingSymlinksInPath().path))
+            #expect(message.contains(agent.url.lastPathComponent))
+        }
+        #expect(!channel.sent.contains { $0["method"] == .string("config/read") })
+        #expect(channel.inputFinished)
+        #expect(!FileManager.default.fileExists(atPath: path))
+    }
+
+    @Test func emptyArrayShowsBrackets() async throws {
+        defer { try? FileManager.default.removeItem(at: home) }
+        try write("a.toml")
+        let listing = try await source(channel(configs: [#"{"name":"a","nickname_candidates":[]}"#])).0.load()
+        #expect(listing.agents.first?.fields == [AgentField(key: "nickname_candidates", value: .text("[]"))])
+    }
+
     @Test func skipsMissingUserLayer() async throws {
         defer { try? FileManager.default.removeItem(at: home) }
         try write("system.toml")

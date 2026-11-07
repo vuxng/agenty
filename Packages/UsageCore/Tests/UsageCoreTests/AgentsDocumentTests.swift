@@ -51,13 +51,67 @@ import Testing
         await source.blockLoad()
         let refresh = Task { await document.refresh() }
         await source.waitForLoad()
-        await document.refresh()
+        var overlapStarted = false
+        let overlap = Task {
+            overlapStarted = true
+            await document.refresh()
+            #expect(document.listing == listing)
+        }
+        while !overlapStarted { await Task.yield() }
         #expect(await source.loadCount == 1)
         #expect(document.isLoading)
         await source.releaseLoad()
         await refresh.value
+        await overlap.value
         #expect(document.listing == listing)
         #expect(!document.isLoading)
+    }
+
+    @Test func cancellingRefreshCallerStillPublishesHeldResult() async {
+        let listing = AgentListing(folderExists: true, agents: [], usesClaudeAgents: true)
+        let source = FakeAgentSource(results: [.success(listing)])
+        let document = AgentsDocument(source: source)
+        await source.blockLoad()
+        let caller = Task { await document.refresh() }
+        await source.waitForLoad()
+        caller.cancel()
+        #expect(document.loadError == nil)
+        #expect(document.isLoading)
+        await source.releaseLoad()
+        await caller.value
+        #expect(document.listing == listing)
+        #expect(document.loadError == nil)
+        #expect(!document.isLoading)
+        #expect(await source.loadCount == 1)
+    }
+
+    @Test func refreshAfterCancelledCallerAwaitsHeldResult() async {
+        let listing = AgentListing(folderExists: true, agents: [], usesClaudeAgents: true)
+        let source = FakeAgentSource(results: [.success(listing)])
+        let document = AgentsDocument(source: source)
+        await source.blockLoad()
+        let caller = Task { await document.refresh() }
+        await source.waitForLoad()
+        caller.cancel()
+        var reentryStarted = false
+        var reentryFinished = false
+        let reentry = Task {
+            reentryStarted = true
+            await document.refresh()
+            reentryFinished = true
+            #expect(document.listing == listing)
+            #expect(document.loadError == nil)
+            #expect(!document.isLoading)
+        }
+        while !reentryStarted { await Task.yield() }
+        #expect(!reentryFinished)
+        #expect(document.loadError == nil)
+        await source.releaseLoad()
+        await caller.value
+        await reentry.value
+        #expect(document.listing == listing)
+        #expect(document.loadError == nil)
+        #expect(await source.loadCount == 1)
     }
 
     @Test func initialErrorRetryDoesNotShowLoading() async {

@@ -77,6 +77,40 @@ import Testing
     @Test func flowMappingIsBlockFromSameLine() {
         #expect(parse("---\nname: x\nmcpServers: {a: {command: x}}\n---")?.fields == [AgentField(key: "mcpServers", value: .block("{a: {command: x}}"))])
     }
+    @Test(arguments: [
+        ("skills", "- name: auditing\n  enabled: true"),
+        ("mcpServers", "- local:\n    command: server"),
+    ])
+    func columnZeroSequenceKeepsEntireBlock(key: String, block: String) throws {
+        let agent = try #require(parse("---\nname: x\n\(key):\n\(block)\nmodel: sonnet\n---"))
+        #expect(!agent.isLineScanned)
+        #expect(agent.fields == [AgentField(key: key, value: .block(block))])
+        #expect(agent.model == "sonnet")
+    }
+    @Test func multilineFlowMappingKeepsColumnZeroClosingBrace() throws {
+        let agent = try #require(parse("---\nname: x\nmcpServers: {\n  local: {command: server}\n}\ntools: Read\n---"))
+        #expect(!agent.isLineScanned)
+        #expect(agent.fields == [
+            AgentField(key: "mcpServers", value: .block("{\n  local: {command: server}\n}")),
+            AgentField(key: "tools", value: .text("Read")),
+        ])
+    }
+    @Test func lineScanKeepsColumnZeroSequenceUntilNextKey() throws {
+        let agent = try #require(parse("---\nname: x\ndescription: Use when: needed\ntools:\n- Read\n# comment\n- Grep\npermissionMode: plan\n---"))
+        #expect(agent.isLineScanned)
+        #expect(agent.fields == [
+            AgentField(key: "tools", value: .block("- Read\n# comment\n- Grep")),
+            AgentField(key: "permissionMode", value: .text("plan")),
+        ])
+    }
+    @Test(arguments: [false, true])
+    func frontmatterPromptRemainsAnOrdinaryField(lineScanned: Bool) throws {
+        let description = lineScanned ? "Use when: needed" : "Description"
+        let agent = try #require(parse("---\nname: x\ndescription: \(description)\nprompt: Header prompt\n---\nBody prompt"))
+        #expect(agent.isLineScanned == lineScanned)
+        #expect(agent.fields == [AgentField(key: "prompt", value: .text("Header prompt"))])
+        #expect(agent.prompt == "Body prompt")
+    }
     @Test func unquotedColonFallsBackToLineScan() throws {
         let agent = try #require(parse("---\nname: hunter\ndescription: Use when: things break\nhooks:\n  Stop: []\n---\n"))
         #expect(agent.isLineScanned)

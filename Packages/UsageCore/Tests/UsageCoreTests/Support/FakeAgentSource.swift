@@ -42,6 +42,7 @@ actor FakeAgentSource: AgentSource {
                 started = nil
             }
         }
+        if Task.isCancelled { throw .failed("CancellationError()") }
         return try result.get()
     }
 }

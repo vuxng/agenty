@@ -43,7 +43,9 @@ private struct AgentsPageContent: View {
 
     var body: some View {
         Group {
-            if let openURL, let agent = document.listing?.agents.first(where: { $0.url == openURL }) {
+            if document.loadError != nil {
+                list
+            } else if let openURL, let agent = document.listing?.agents.first(where: { $0.url == openURL }) {
                 AgentDetail(agent: agent, provider: document.source.provider,
                             path: directory.displayPath(of: agent.url), backTitle: title) {
                     self.openURL = nil

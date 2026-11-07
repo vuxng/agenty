@@ -6,7 +6,7 @@ public enum MarkdownAgentParser {
         var normalized = text.replacingOccurrences(of: "\r\n", with: "\n")
         if normalized.first == "\u{FEFF}" { normalized.removeFirst() }
         let lines = normalized.components(separatedBy: "\n")
-        guard lines.first.map { trimEnd($0) } == "---",
+        guard lines.first.map({ trimEnd($0) }) == "---",
               let end = lines.indices.dropFirst().first(where: {
                   trimEnd(lines[$0]) == "---"
               }) else { return nil }
@@ -19,8 +19,13 @@ public enum MarkdownAgentParser {
         do {
             guard let node = try Yams.compose(yaml: header.joined(separator: "\n") + "\n"),
                   case .mapping(let mapping) = node else { return nil }
-            for (key, value) in mapping {
+            let pairs = Array(mapping)
+            for (index, pair) in pairs.enumerated() {
+                let (key, value) = pair
                 guard case .scalar(let scalarKey) = key else { continue }
+                let startLine = (key.mark?.line ?? 1) - 1
+                let endLine = index + 1 < pairs.count
+                    ? (pairs[index + 1].key.mark?.line ?? header.count + 1) - 1 : header.count
                 let fieldValue: AgentFieldValue
                 switch value {
                 case .scalar(let scalar):
@@ -31,9 +36,9 @@ public enum MarkdownAgentParser {
                         guard case .scalar(let scalar) = node, !scalar.string.contains("\n") else { return nil }
                         return scalar.string
                     }
-                    fieldValue = strings.count == sequence.count ? .text(strings.joined(separator: ", ")) : .block(rawValue(header, at: (key.mark?.line ?? 1) - 1))
+                    fieldValue = strings.count == sequence.count ? .text(strings.joined(separator: ", ")) : .block(rawValue(header, at: startLine, until: endLine))
                 case .mapping, .alias:
-                    fieldValue = .block(rawValue(header, at: (key.mark?.line ?? 1) - 1))
+                    fieldValue = .block(rawValue(header, at: startLine, until: endLine))
                 }
                 entries.append(AgentField(key: scalarKey.string, value: fieldValue))
             }
@@ -41,12 +46,16 @@ public enum MarkdownAgentParser {
             scanned = true
             let pattern = #"^([A-Za-z_][A-Za-z0-9_.-]*):(?:\s+(.*))?$"#
             let regex = try! NSRegularExpression(pattern: pattern)
-            for (index, line) in header.enumerated() {
-                let range = NSRange(line.startIndex..., in: line)
-                guard let match = regex.firstMatch(in: line, range: range),
+            let keys = header.indices.filter {
+                regex.firstMatch(in: header[$0], range: NSRange(header[$0].startIndex..., in: header[$0])) != nil
+            }
+            for (position, index) in keys.enumerated() {
+                let line = header[index]
+                guard let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
                       let keyRange = Range(match.range(at: 1), in: line) else { continue }
                 let inline = Range(match.range(at: 2), in: line).map { String(line[$0]).trimmingCharacters(in: .whitespaces) } ?? ""
-                let value: AgentFieldValue = inline.isEmpty ? .block(rawValue(header, at: index)) : .text(unquote(inline))
+                let endLine = position + 1 < keys.count ? keys[position + 1] : header.count
+                let value: AgentFieldValue = inline.isEmpty ? .block(rawValue(header, at: index, until: endLine)) : .text(unquote(inline))
                 entries.append(AgentField(key: String(line[keyRange]), value: value))
             }
         }
@@ -58,18 +67,14 @@ public enum MarkdownAgentParser {
         let model = string("model")
         return AgentDefinition(url: url, name: name, description: string("description"),
                                model: model == "inherit" ? nil : model,
-                               fields: entries.filter { !["name", "description", "model", "prompt"].contains($0.key) },
+                               fields: entries.filter { !["name", "description", "model"].contains($0.key) },
                                prompt: prompt.isEmpty ? nil : prompt, isLineScanned: scanned)
     }
 
-    private static func rawValue(_ lines: [String], at index: Int) -> String {
+    private static func rawValue(_ lines: [String], at index: Int, until end: Int) -> String {
         guard lines.indices.contains(index), let colon = lines[index].firstIndex(of: ":") else { return "" }
         let inline = String(lines[index][lines[index].index(after: colon)...]).trimmingCharacters(in: .whitespaces)
-        var nested: [String] = []
-        for line in lines.dropFirst(index + 1) {
-            if !line.isEmpty && line.first != " " && line.first != "\t" && line.first != "#" { break }
-            nested.append(line)
-        }
+        var nested = Array(lines.dropFirst(index + 1).prefix(max(0, end - index - 1)))
         while nested.last?.trimmingCharacters(in: .whitespaces).isEmpty == true { nested.removeLast() }
         let indent = nested.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
             .map { $0.prefix(while: { $0 == " " || $0 == "\t" }).count }.min() ?? 0
