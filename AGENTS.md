@@ -67,4 +67,4 @@ Tests and checks run against a temporary home, never the real `~/.claude`, `~/.c
   ```
 
   `claude plugin list`, which the Config page runs, still uses the real home, and the Claude login still comes from the real Keychain.
-- Each build gets a new ad-hoc signature, so launching it with Claude enabled can put a Keychain dialog on the user's screen.
+- The Claude login is read by running `/usr/bin/security find-generic-password` (`CredentialSources.swift`), not `SecItemCopyMatching`. Claude Code's token refresh resets the item's partition list, so a direct Keychain read brings the Keychain dialog back after each refresh and each new build.
