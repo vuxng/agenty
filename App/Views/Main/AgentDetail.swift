@@ -107,10 +107,8 @@ struct AgentDetail: View {
                     .font(.body)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 modelBadge
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.fill.secondary, in: .capsule)
+                    .font(.body.weight(.semibold))
+                    .multilineTextAlignment(.trailing)
             }
             ForEach(textFields) { field in
                 if case .text(let text) = field.value {
