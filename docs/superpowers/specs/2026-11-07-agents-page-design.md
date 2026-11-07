@@ -1,7 +1,7 @@
 # Agenty — trang Agents để xem agent tầng user của Claude, Codex và Grok
 
 - **Ngày:** 2026-11-07
-- **Trạng thái:** Chờ duyệt
+- **Trạng thái:** Đã duyệt
 - **Repo:** github.com/vuxng/agenty
 - **Dựa trên:** `DESIGN.md`, `docs/superpowers/specs/2026-11-06-app-shell-instructions-design.md`,
   `docs/superpowers/specs/2026-11-07-config-page-design.md`
