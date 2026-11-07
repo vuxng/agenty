@@ -25,7 +25,9 @@ public struct ClaudeProvider: UsageProvider {
     }
 
     public func fetch() async throws(UsageError) -> UsageSnapshot {
-        let (best, keychainDenied) = bestCredential()
+        let (best, keychainDenied) = await bestCredential()
+        // A cancelled Keychain read looks like a missing credential; report it as transient instead.
+        if Task.isCancelled { throw .network(retryAfter: nil) }
         guard let credential = best else { throw keychainDenied ? .keychainDenied : .notLoggedIn }
         if let expiresAt = credential.expiresAt, expiresAt <= now() {
             throw keychainDenied ? .keychainDenied : .tokenExpired
@@ -102,13 +104,13 @@ public struct ClaudeProvider: UsageProvider {
 
     /// Largest `expiresAt` wins, `nil` sorts lowest, ties keep the earlier source.
     /// Also reports whether any source was refused Keychain access.
-    private func bestCredential() -> (credential: ClaudeCredential?, keychainDenied: Bool) {
+    private func bestCredential() async -> (credential: ClaudeCredential?, keychainDenied: Bool) {
         var best: ClaudeCredential?
         var keychainDenied = false
         for source in sources {
             let loaded: ClaudeCredential?
             do {
-                loaded = try source.load()
+                loaded = try await source.load()
             } catch let error as CredentialSourceError {
                 switch error {
                 case let .accessDenied(status):

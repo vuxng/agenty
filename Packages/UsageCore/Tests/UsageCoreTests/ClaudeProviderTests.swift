@@ -219,14 +219,11 @@ import Testing
         #expect(source.keychainCalls == 2)
     }
 
-    @Test func deniedGateShortCircuitsRealKeychainSource() {
-        let gate = KeychainAccessGate()
-        gate.markDenied()
-        // The gate is checked before any Keychain call. The bogus service keeps this test away from
-        // the user's real "Claude Code-credentials" item even if that check ever regresses.
-        #expect(throws: CredentialSourceError.accessDenied(errSecUserCanceled)) {
-            try KeychainCredentialSource(service: "io.github.vuxng.Agenty.tests.nonexistent", gate: gate).load()
-        }
+    @Test func cancelledCredentialReadIsNetworkNotStaleToken() async {
+        let p = provider([HangingCredentialSource(), StaticCredentialSource(stale)], FakeHTTPClient(status: 200))
+        let task = Task { try await p.fetch() }
+        task.cancel()
+        await #expect(throws: UsageError.network(retryAfter: nil)) { try await task.value }
     }
 
     @Test func gateStatusClassification() {
@@ -234,6 +231,10 @@ import Testing
         #expect(KeychainAccessGate.isDenial(-25293))
         #expect(KeychainAccessGate.isDenial(-25308))
         #expect(!KeychainAccessGate.isDenial(-25300))
+        #expect(KeychainAccessGate.remembersDenial(-128))
+        #expect(KeychainAccessGate.remembersDenial(-25293))
+        #expect(!KeychainAccessGate.remembersDenial(-25308))
+        #expect(!KeychainAccessGate.remembersDenial(-25300))
     }
 
     @Test func allSourcesThrowingIsNotLoggedIn() async {
@@ -247,28 +248,28 @@ import Testing
         return d
     }
 
-    @Test func fileSourceMissingFileIsNil() throws {
+    @Test func fileSourceMissingFileIsNil() async throws {
         let d = try tempDir()
         defer { try? FileManager.default.removeItem(at: d) }
-        #expect(try FileCredentialSource(url: d.appendingPathComponent("nope.json")).load() == nil)
+        #expect(try await FileCredentialSource(url: d.appendingPathComponent("nope.json")).load() == nil)
     }
 
-    @Test func fileSourceReadsCredential() throws {
+    @Test func fileSourceReadsCredential() async throws {
         let d = try tempDir()
         defer { try? FileManager.default.removeItem(at: d) }
         let url = d.appendingPathComponent("c.json")
         try Data(#"""
         {"claudeAiOauth":{"accessToken":"tok","expiresAt":1793790000000,"subscriptionType":"pro"}}
         """#.utf8).write(to: url)
-        let c = try FileCredentialSource(url: url).load()
+        let c = try await FileCredentialSource(url: url).load()
         #expect(c == ClaudeCredential(accessToken: "tok", expiresAt: Date(timeIntervalSince1970: 1_793_790_000), subscriptionType: "pro"))
     }
 
-    @Test func fileSourceGarbageIsUnreadable() throws {
+    @Test func fileSourceGarbageIsUnreadable() async throws {
         let d = try tempDir()
         defer { try? FileManager.default.removeItem(at: d) }
         let url = d.appendingPathComponent("c.json")
         try Data("garbage".utf8).write(to: url)
-        #expect(throws: CredentialSourceError.unreadable) { try FileCredentialSource(url: url).load() }
+        await #expect(throws: CredentialSourceError.unreadable) { try await FileCredentialSource(url: url).load() }
     }
 }

@@ -16,7 +16,8 @@ public protocol ProcessRunner: Sendable {
         body: @Sendable (any LineChannel) async throws -> R
     ) async throws -> R
 
-    /// When requested, throws `ProcessRunnerError.unsuccessfulExit` after unsuccessful termination.
+    /// When requested, throws `ProcessRunnerError.unsuccessfulExit(code:)` after unsuccessful termination.
+    /// The code is the normal exit status, or `nil` if a signal terminated the process.
     func run<R: Sendable>(
         executable: URL,
         arguments: [String],
@@ -27,5 +28,5 @@ public protocol ProcessRunner: Sendable {
 }
 
 public enum ProcessRunnerError: Error, Sendable, Equatable {
-    case unsuccessfulExit
+    case unsuccessfulExit(code: Int32?)
 }

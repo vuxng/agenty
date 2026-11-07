@@ -150,14 +150,27 @@ Trigger (timer / mở popover / ⟳ / wake)
 ### 5.1 Claude — `ClaudeProvider`
 
 **Credential (chỉ đọc, không bao giờ ghi):**
-1. Keychain generic password, service `Claude Code-credentials`.
+1. Keychain generic password, service `Claude Code-credentials`, đọc bằng
+   `/usr/bin/security find-generic-password -s "Claude Code-credentials" -w`.
 2. File `~/.claude/.credentials.json`.
 
 Cả hai có dạng `{"claudeAiOauth": {accessToken, refreshToken, expiresAt, refreshTokenExpiresAt, scopes, subscriptionType, rateLimitTier}}`.
-App đọc cả hai và dùng bản có `expiresAt` muộn hơn. Lần đầu đọc Keychain, macOS có thể hỏi
-quyền; người dùng chọn "Always Allow".
+App đọc cả hai và dùng bản có `expiresAt` muộn hơn.
 *Spike:* trên máy thật, file đã hết hạn từ ~28 ngày trước, còn Keychain là bản Claude Code
 đang refresh. Thực tế **Keychain là nguồn chính**, file là fallback.
+
+*Vì sao không dùng `SecItemCopyMatching` (đổi ngày 2026-11-07):* mỗi lần refresh token,
+Claude Code ghi lại item bằng `/usr/bin/security add-generic-password -U`. Lần ghi đó đặt lại
+partition list của item thành `apple-tool:`, nên quyền "Always Allow" của Agenty
+(`teamid:8WJ6LC5Z59`) mất, và cứ vài tiếng macOS lại hỏi. App đọc qua chính `security`, vốn
+luôn có trong partition list và danh sách app của item, nên không bị hỏi.
+
+- `-w` in nguyên dữ liệu nếu là ASCII in được, còn không thì in dạng hex. App thử cả hai.
+- Mã thoát là byte thấp của OSStatus:
+  - 44 là không có item.
+  - 128 (Deny) và 51 (sai mật khẩu): app nhớ là bị từ chối cho tới khi người dùng bấm Retry.
+  - 36 (keychain khoá, không được hiện UI): báo lỗi Keychain nhưng không nhớ, nên lần refresh
+    sau thử lại.
 
 **Request:**
 ```
@@ -409,7 +422,7 @@ Kết quả: `docs/superpowers/spikes/2026-11-04-claude-codex-spike.md`; §5.1 v
 |---|---|---|
 | Endpoint Claude thay đổi hoặc bị chặn | Mất dữ liệu Claude | `unexpectedFormat` rõ ràng; parse lỏng (bỏ qua field lạ); fixture test |
 | `codex app-server` (experimental) đổi protocol | Mất dữ liệu Codex | Pin theo schema đã sinh; fallback v2: đọc `rate_limits` trong session log |
-| Keychain prompt gây phiền | UX lần đầu | Có fallback file; giải thích trong onboarding/README |
+| Keychain prompt gây phiền | Hỏi lại sau mỗi lần Claude Code refresh token | Đọc qua `/usr/bin/security` (§5.1); có fallback file. Nếu Claude Code thôi ghi bằng `security`, hộp thoại sẽ quay lại với tên "security" |
 | Method `_x.ai/billing` của Grok (nội bộ, không có tài liệu) bị đổi tên hoặc gỡ | Mất dữ liệu Grok | `-32601` → `unexpectedFormat` rõ ràng; dự phòng: gọi HTTP `/v1/billing` (không khuyến nghị) |
 | Spawn `grok` kích hoạt tự cập nhật, hoặc xoá credential đã chết | Tải xuống bất ngờ; Grok bị đăng xuất | `GROK_DISABLE_AUTOUPDATER=1`; hiện `.notLoggedIn` rõ ràng, không retry dồn dập |
 | Runner CI chưa có macOS 27 | CI chỉ chạy được một phần | `swift test` vẫn chạy nếu toolchain hỗ trợ; build app ở local |

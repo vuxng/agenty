@@ -16,6 +16,14 @@ final class MutableCredentialSource: CredentialSource, Sendable {
     func load() throws -> ClaudeCredential? { current.withLock { $0 } }
 }
 
+/// Never returns on its own: waits until the surrounding task is cancelled, like a slow Keychain read.
+struct HangingCredentialSource: CredentialSource {
+    func load() async throws -> ClaudeCredential? {
+        try await Task.sleep(for: .seconds(3600))
+        return nil
+    }
+}
+
 struct ThrowingCredentialSource: CredentialSource {
     let error: CredentialSourceError
     init(_ error: CredentialSourceError) { self.error = error }
