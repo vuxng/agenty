@@ -2,7 +2,7 @@
 
 # Agenty
 
-A small macOS menu-bar app that shows how much of your Claude, Codex and Grok subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset. Grok is supported for usage only.
+A small macOS menu-bar app that shows how much of your Claude, Codex and Grok subscription limits you have used (the 5-hour session, the weekly window and per-model windows) and when they reset. Grok supports usage and the Agents page, but has no Instructions or Config page.
 
 <img src="docs/images/popover.png" width="340" alt="The Agenty popover with sample data: Claude at 42% of its 5-hour session and 64% of its weekly limit, Codex at 83% of its weekly limit">
 
@@ -10,7 +10,7 @@ A small macOS menu-bar app that shows how much of your Claude, Codex and Grok su
 
 - Menu-bar glyph in three styles (bars, a single ring, or each provider's logo with its percentage) so you can see at a glance whether a limit is close.
 - Popover with every window, its percentage and its reset time, plus your plan and any credit balance.
-- Main window with Usage, Instructions and Config pages, opened with the Open Agenty button in the popover. Usage shows your Claude, Codex and Grok limits side by side.
+- Main window with Usage, Instructions, Config and Agents pages, opened with the Open Agenty button in the popover. Usage shows your Claude, Codex and Grok limits side by side.
 - Instructions page to edit `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md` in Markdown. Save with the Save button or Command-S; Agenty creates the file if it is missing. Changes apply to new sessions. If Codex is using `AGENTS.override.md`, the page warns that it ignores `AGENTS.md`.
 - Usage turns orange and red at levels you choose, 80% and 95% by default.
 - Notifications at those levels and when a limit resets.
@@ -20,6 +20,8 @@ A small macOS menu-bar app that shows how much of your Claude, Codex and Grok su
 - English and Vietnamese UI.
 
 The Config page edits your Claude and Codex user settings, including models, permissions, sandbox options and plugins. Use the controls or edit the file directly, then save with the Save button or Command-S. Agenty asks before saving risky settings from the controls and before quitting with unsaved changes. Changes apply to new sessions.
+
+The Agents page lists your agents in `~/.claude/agents`, `~/.codex/agents` and `~/.grok/agents`, with their models and a detail page for each agent. It is read-only; Agenty never writes to these folders. The Codex tab requires the Codex CLI.
 
 ## Settings
 
@@ -37,7 +39,7 @@ Open Settings with the gear in the popover.
 |---|---|
 | Claude (Claude Code) | Supported |
 | Codex (Codex CLI) | Supported |
-| Grok (Grok CLI) | Supported, usage only |
+| Grok (Grok CLI) | Supported, usage and Agents |
 
 ## Requirements
 

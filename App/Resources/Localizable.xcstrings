@@ -27,6 +27,22 @@
         }
       }
     },
+    "%@ has no agents of yours in this folder." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ has no agents of yours in this folder."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ chưa có agent nào của bạn trong thư mục này."
+          }
+        }
+      }
+    },
     "%@ is limiting requests — will retry" : {
       "localizations" : {
         "vi" : {
@@ -95,6 +111,40 @@
         }
       }
     },
+    "%lld agents" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld agent"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld agents"
+                }
+              }
+            }
+          }
+        },
+        "vi" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld agent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld min" : {
       "localizations" : {
         "vi" : {
@@ -135,6 +185,22 @@
         }
       }
     },
+    "Agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agent"
+          }
+        }
+      }
+    },
     "Agenty" : {
       "localizations" : {
         "en" : {
@@ -163,6 +229,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đã có Agenty %@"
+          }
+        }
+      }
+    },
+    "Agenty can't read the %@ agents: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty can't read the %@ agents: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty không đọc được agent của %@: %@"
           }
         }
       }
@@ -209,6 +291,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tự động phát hiện"
+          }
+        }
+      }
+    },
+    "Back to agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to agents"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quay lại danh sách agent"
           }
         }
       }
@@ -381,6 +479,22 @@
         }
       }
     },
+    "Grok also uses the agents in ~/.claude/agents." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok also uses the agents in ~/.claude/agents."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok cũng dùng các agent trong ~/.claude/agents."
+          }
+        }
+      }
+    },
     "Highest percentage" : {
       "localizations" : {
         "vi" : {
@@ -443,6 +557,22 @@
         }
       }
     },
+    "Agenty needs the Codex CLI to read Codex agents." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty needs the Codex CLI to read Codex agents."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenty cần CLI Codex để đọc agent của Codex."
+          }
+        }
+      }
+    },
     "Agenty: %@" : {
       "localizations" : {
         "vi" : {
@@ -499,6 +629,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Không có giới hạn đang áp dụng"
+          }
+        }
+      }
+    },
+    "No description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No description"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không có mô tả"
           }
         }
       }
@@ -715,6 +861,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hiển thị email tài khoản"
+          }
+        }
+      }
+    },
+    "This file isn't valid YAML, so Agenty read it line by line." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file isn't valid YAML, so Agenty read it line by line."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File này không phải YAML hợp lệ, nên Agenty đọc theo từng dòng."
           }
         }
       }
@@ -2145,6 +2307,22 @@
         }
       }
     },
+    "Session model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session model"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model của phiên"
+          }
+        }
+      }
+    },
     "Set to %@. Change it in File mode." : {
       "localizations" : {
         "en" : {
@@ -2253,6 +2431,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Model tự quyết khi nào cần hỏi"
+          }
+        }
+      }
+    },
+    "This file isn't plain text." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file isn't plain text."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File này không phải văn bản thuần."
+          }
+        }
+      }
+    },
+    "This folder doesn't exist yet, so %@ has no agents of yours." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder doesn't exist yet, so %@ has no agents of yours."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thư mục này chưa tồn tại, nên %@ chưa có agent nào của bạn."
           }
         }
       }

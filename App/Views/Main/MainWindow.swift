@@ -1,4 +1,5 @@
 import SwiftUI
+import UsageCore
 
 struct MainWindow: View {
     let model: AppModel
@@ -12,6 +13,8 @@ struct MainWindow: View {
             case .usage: UsagePage(store: model.store, onRetryKeychain: model.retryKeychainAccess)
             case .instructions:
                 InstructionsPage(model: model)
+            case .agents:
+                AgentsPage(model: model)
             case .config:
                 ConfigPage(model: model)
             }
@@ -65,5 +68,11 @@ struct MainWindow: View {
         .animation(reduceMotion ? nil : .smooth, value: model.selectedProvider)
         .onAppear { DockPolicy.windowDidAppear() }
         .onDisappear { DockPolicy.windowDidDisappear() }
+        .onChange(of: page) {
+            if (page == .instructions || page == .config),
+               !ProviderID.configurable.contains(model.selectedProvider) {
+                model.selectedProvider = .claude
+            }
+        }
     }
 }

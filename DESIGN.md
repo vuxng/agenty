@@ -1,6 +1,6 @@
 # Agenty Design Language
 
-> App macOS cho dev dùng Claude và Codex: theo dõi usage, quản lý cấu hình trên máy.
+> App macOS cho dev dùng Claude, Codex và Grok: theo dõi usage, quản lý cấu hình trên máy.
 
 ## 1. Visual Theme
 
@@ -30,6 +30,7 @@ màu của từng provider.
 | Success | `.green` | Trạng thái ổn |
 | Provider Claude | `#D97857` | Trường màu, dấu Markdown |
 | Provider Codex | `#6B6BF2` | Trường màu, dấu Markdown |
+| Provider Grok | `#9AA0A6` | Trường màu |
 
 Màu provider chỉ dùng cho trường màu nền và dấu Markdown trong editor, không dùng cho chữ nội dung hay nút.
 Trang có nhiều chữ dùng trường màu nhạt hơn, chỉ của provider đang chọn.
@@ -43,9 +44,9 @@ các cỡ hiển thị lớn ghi trong bảng.
 | Vai trò | Style | Dùng cho |
 |---|---|---|
 | Số lớn | 112pt, thin, rounded, `.monospacedDigit()` | Giới hạn gần chạm nhất của provider |
-| Tên file | 52pt, thin, rounded | Trang Instructions |
+| Tiêu đề trang | 52pt, thin, rounded | Tên file (Instructions), số agent và tên agent (Agents) |
 | Tên model | 52pt, thin, rounded | Hero trang Config |
-| Tên provider | `.title3`, semibold | Đầu thẻ |
+| Tiêu đề thẻ | `.title3`, semibold | Tên provider và tên agent trên thẻ |
 | Nhãn khối | `.headline`, `.secondary` | Tên giới hạn trên số lớn |
 | Nội dung | `.body` | Text thường |
 | Phụ, trạng thái | `.caption`, `.secondary` | Thời gian, ghi chú |
@@ -68,18 +69,22 @@ Riêng popover còn dùng `.subheadline.weight(.medium)`, `.callout`,
 | Settings panes | Template | Cài đặt, dùng `Form` grouped | General, Providers, Notifications |
 | Thẻ provider | Component | Một provider trong cửa sổ chính | Bình thường, cảnh báo, số cũ, không có số |
 | Thẻ cấu hình | Component | Nhóm cấu hình, cùng chất liệu `.thinMaterial`, bo góc 24pt và padding 24pt như thẻ provider | Model, quyền, sandbox, plugin |
+| Thẻ agent | Component | Agent của provider đang chọn, cùng chất liệu `.thinMaterial`, bo góc 24pt và padding 24pt như thẻ provider | Có model, model của phiên, lỗi đọc file |
+| Nút quay lại | Component | Trở về danh sách agent, glass dạng capsule cùng kiểu với bộ chọn provider | — |
 | Bộ chọn provider | Component | Tab glass có logo và tên, canh trái ngay trên tên file | Đang chọn, không chọn |
 | Viên lưu | Component | Glass nổi ở đáy, nơi duy nhất cho việc lưu | Chưa lưu, xung đột, lưu lỗi, lỗi kiểm tra |
 | Trang Usage | Template | Các thẻ provider cạnh nhau | — |
 | Trang Instructions | Template | File nằm thẳng trên trường màu | — |
 | Trang Config | Template | Cấu hình của provider đang chọn | Điều khiển, File |
+| Trang Agents | Template | Xem agent của provider đang chọn, chỉ đọc | Danh sách, Chi tiết |
 
 Ưu tiên control SwiftUI có sẵn: `Button`, `Toggle`, `Picker`, `Slider`, `Menu`, `Stepper`, `ProgressView`,
-`ContentUnavailableView`, `Label`.
+`ContentUnavailableView`, `Label`. Lưới thẻ agent dùng `LazyVGrid`, nút dùng `Button`.
 
 ## 5. Layout
 
 **Grid:** fluid, cột `adaptive`, không chia cột cố định.
+**Ngoại lệ:** Lưới thẻ agent trên trang Agents dùng 2 cột `.flexible()`, cách nhau 16pt, giữ 2 cột cả ở cửa sổ tối thiểu 860×580.
 **Base unit:** 4pt.
 **Composition:** Trường màu tràn cửa sổ, thanh điều hướng giữa toolbar, nội dung canh giữa.
 **Độ rộng tối đa:** 960pt cho nội dung, 720pt cho editor. Nội dung giữ cỡ cố định, không phóng theo cửa sổ.
@@ -101,7 +106,7 @@ giữ nguyên kích thước và khoảng cách hiện tại.
 ## 6. Depth
 
 Không có shadow tự đặt. Thẻ dùng `.thinMaterial`, bo góc 24pt, control dùng mặc định của hệ thống.
-Liquid Glass chỉ dùng cho lớp điều khiển nổi: toolbar, bộ chọn provider, nút Điều khiển / File, viên lưu.
+Liquid Glass chỉ dùng cho lớp điều khiển nổi: toolbar, bộ chọn provider, nút Điều khiển / File, nút quay lại, viên lưu.
 Không dùng cho thẻ hay vùng nội dung.
 
 ## 7. Do's and Don'ts
@@ -114,7 +119,7 @@ Không dùng cho thẻ hay vùng nội dung.
 - Theo light/dark, Dynamic Type và các tuỳ chọn trợ năng của hệ thống.
 
 ### Don't
-- Không thêm `AccentColor`. Màu hex chỉ có hai màu provider.
+- Không thêm `AccentColor`. Màu hex chỉ có ba màu provider.
 - Không dùng accent cho trang trí hoặc thanh progress.
 - Không tự viết control khi SwiftUI đã có.
 - Không dịch tay traffic light, để toolbar của hệ thống canh.

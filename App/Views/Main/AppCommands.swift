@@ -13,7 +13,7 @@ struct AppCommands: Commands {
                     model.instructions[model.selectedProvider]?.save()
                 case .config:
                     model.requestConfigSave()
-                case .usage:
+                case .usage, .agents:
                     break
                 }
             }
@@ -34,7 +34,7 @@ struct AppCommands: Commands {
         switch page {
         case .instructions: model.instructions[model.selectedProvider]?.isDirty == true
         case .config: model.configs[model.selectedProvider]?.isDirty == true
-        case .usage: false
+        case .usage, .agents: false
         }
     }
 }

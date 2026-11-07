@@ -3,6 +3,42 @@ import Testing
 @testable import UsageCore
 
 @Suite struct JSONRPCClientTests {
+    @Test func callOrderedPreservesKeyOrderAndNumberLiteral() async throws {
+        let ch = ScriptedChannel { _ in [
+            #"{"method":"updated","params":{}}"#,
+            #"{"id":99,"result":"wrong reply"}"#,
+            #"{"id":1,"result":{"z":1.20e+3,"a":true}}"#,
+        ] }
+        let result = try await JSONRPCClient(channel: ch, includesVersionField: false)
+            .callOrdered("config/read", params: .null)
+        #expect(result.serialized() == "{\n  \"z\": 1.20e+3,\n  \"a\": true\n}\n")
+    }
+
+    @Test func callOrderedMapsServerError() async {
+        let ch = ScriptedChannel { _ in [
+            #"{"id":1,"error":{"code":-32000,"message":"failed","data":"details"}}"#,
+        ] }
+        await #expect(throws: JSONRPCError.server(code: -32000, message: "failed", data: .string("details"))) {
+            try await JSONRPCClient(channel: ch, includesVersionField: false)
+                .callOrdered("config/read", params: .null)
+        }
+    }
+
+    @Test func callOrderedDefaultsMissingResultToNull() async throws {
+        let ch = ScriptedChannel { _ in [#"{"id":1}"#] }
+        let result = try await JSONRPCClient(channel: ch, includesVersionField: false)
+            .callOrdered("m", params: .null)
+        #expect(result == .null)
+    }
+
+    @Test func callOrderedThrowsClosedOnEOF() async {
+        let ch = ScriptedChannel { _ in [] }
+        await #expect(throws: JSONRPCError.closed) {
+            try await JSONRPCClient(channel: ch, includesVersionField: false)
+                .callOrdered("m", params: .null)
+        }
+    }
+
     @Test func callSendsRequestWithoutVersionField() async throws {
         let ch = ScriptedChannel { _ in [#"{"id":1,"result":{"ok":true}}"#] }
         let rpc = JSONRPCClient(channel: ch, includesVersionField: false)

@@ -11,6 +11,7 @@ final class AppModel {
     let updater = Updater()
     let instructions: [ProviderID: InstructionsDocument]
     let configs: [ProviderID: ConfigDocument]
+    let agents: [ProviderID: AgentsDocument]
     var pendingRiskySave: ProviderID?
     var selectedProvider: ProviderID = .claude
 
@@ -41,6 +42,18 @@ final class AppModel {
                 clientVersion: version,
                 home: home
             )),
+        ]
+
+        self.agents = [
+            .claude: AgentsDocument(source: MarkdownAgentSource.claude(home: home)),
+            .codex: AgentsDocument(source: CodexAgentSource(
+                locator: locator,
+                pathOverride: { UserDefaults.standard.string(forKey: SettingsKey.providerPath(.codex)) },
+                runner: runner,
+                clientVersion: version,
+                home: home
+            )),
+            .grok: AgentsDocument(source: MarkdownAgentSource.grok(home: home)),
         ]
 
         let gate = KeychainAccessGate()
