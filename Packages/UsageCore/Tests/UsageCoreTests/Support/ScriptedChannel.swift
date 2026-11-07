@@ -106,7 +106,7 @@ final class FakeProcessRunner: ProcessRunner, @unchecked Sendable {
         body: @Sendable (any LineChannel) async throws -> R
     ) async throws -> R {
         let result = try await run(executable: executable, arguments: arguments, environment: environment, body: body)
-        if requireSuccessfulExit && exitCode != 0 { throw ProcessRunnerError.unsuccessfulExit }
+        if requireSuccessfulExit && exitCode != 0 { throw ProcessRunnerError.unsuccessfulExit(code: exitCode) }
         return result
     }
 

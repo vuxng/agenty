@@ -50,7 +50,15 @@ public struct SubprocessRunner: ProcessRunner {
             return try await body(channel)
         }
         if requireSuccessfulExit && !result.terminationStatus.isSuccess {
-            throw ProcessRunnerError.unsuccessfulExit
+            let code: Int32?
+            if case .exited(let exitCode) = result.terminationStatus {
+                // Darwin waitid can expose extended exit bits (e.g. a negative OSStatus).
+                // Match the conventional process exit code reported by the shell.
+                code = exitCode & 0xff
+            } else {
+                code = nil
+            }
+            throw ProcessRunnerError.unsuccessfulExit(code: code)
         }
         return result.closureResult
     }
