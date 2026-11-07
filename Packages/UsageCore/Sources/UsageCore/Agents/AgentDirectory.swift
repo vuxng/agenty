@@ -13,35 +13,59 @@ public struct AgentDirectory: Sendable {
         self.recursive = recursive
     }
 
-    public func files() -> [URL]? {
+    public func files() throws(AgentLoadError) -> [URL]? {
         let manager = FileManager.default
         let target = url.resolvingSymlinksInPath()
-        guard (try? target.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { return nil }
+        do {
+            guard try target.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else { return nil }
+        } catch {
+            let cocoa = error as NSError
+            if cocoa.domain == NSCocoaErrorDomain,
+               cocoa.code == NSFileReadNoSuchFileError || cocoa.code == NSFileNoSuchFileError {
+                return nil
+            }
+            throw .failed(String(describing: error))
+        }
         var files: [URL] = []
-        func visit(_ target: URL, original: URL, ancestors: Set<String>) {
+        func visit(_ target: URL, original: URL, ancestors: Set<String>) throws {
             guard !ancestors.contains(target.path) else { return }
             let ancestors = ancestors.union([target.path])
             let children: [URL]
             if recursive {
+                var enumerationError: (any Error)?
                 guard let enumerator = manager.enumerator(at: target, includingPropertiesForKeys: nil,
-                                                          options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]) else { return }
+                                                          options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants],
+                                                          errorHandler: { _, error in
+                    if enumerationError == nil { enumerationError = error }
+                    return false
+                }) else {
+                    throw AgentLoadError.failed("Unable to enumerate directory: " + target.path)
+                }
                 children = enumerator.allObjects.compactMap { $0 as? URL }
+                if let enumerationError { throw enumerationError }
             } else {
-                children = (try? manager.contentsOfDirectory(at: target, includingPropertiesForKeys: nil,
-                                                             options: [.skipsHiddenFiles])) ?? []
+                children = try manager.contentsOfDirectory(at: target, includingPropertiesForKeys: nil,
+                                                             options: [.skipsHiddenFiles])
             }
             for child in children {
                 let resolved = child.resolvingSymlinksInPath()
                 let originalChild = original.appendingPathComponent(child.lastPathComponent)
-                guard let values = try? resolved.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]) else { continue }
+                guard let values = try? resolved.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey]) else {
+                    if child.pathExtension == fileExtension { files.append(originalChild) }
+                    continue
+                }
                 if values.isRegularFile == true, child.pathExtension == fileExtension {
                     files.append(originalChild)
                 } else if recursive, values.isDirectory == true {
-                    visit(resolved, original: originalChild, ancestors: ancestors)
+                    try visit(resolved, original: originalChild, ancestors: ancestors)
                 }
             }
         }
-        visit(target, original: url, ancestors: [])
+        do {
+            try visit(target, original: url, ancestors: [])
+        } catch {
+            throw .failed(String(describing: error))
+        }
         return files.sorted { $0.path < $1.path }
     }
 

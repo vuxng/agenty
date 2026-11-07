@@ -20,7 +20,7 @@ public struct MarkdownAgentSource: AgentSource {
     }
 
     public func load() async throws(AgentLoadError) -> AgentListing {
-        let files = directory.files()
+        let files = try directory.files()
         var agents: [AgentDefinition] = []
         for url in files ?? [] {
             do {
@@ -36,9 +36,9 @@ public struct MarkdownAgentSource: AgentSource {
                 agents.append(.unreadable(url: url, error: mapped))
             }
         }
-        let usesClaudeAgents = checksClaudeAgents && !(AgentDirectory(
+        let usesClaudeAgents = checksClaudeAgents && !((try? AgentDirectory(
             url: directory.home.appendingPathComponent(".claude/agents"), home: directory.home,
-            fileExtension: "md", recursive: false).files() ?? []).isEmpty
+            fileExtension: "md", recursive: false).files()) ?? []).isEmpty
         return AgentListing(folderExists: files != nil, agents: agents, usesClaudeAgents: usesClaudeAgents)
     }
 }

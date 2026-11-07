@@ -3,6 +3,24 @@ import Testing
 @testable import UsageCore
 
 @Suite struct MarkdownAgentSourceTests {
+    @Test func unreadableFolderThrowsAndHintIsFalse() async throws {
+        let f = AgentTestFolder(); defer { f.clean() }
+        try f.write(".claude/agents/a.md")
+        let folder = f.home.appendingPathComponent(".claude/agents")
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: folder.path) }
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: folder.path)
+        do {
+            _ = try await MarkdownAgentSource.claude(home: f.home).load()
+            Issue.record("Expected directory failure")
+        } catch {
+            guard case .failed(let message) = error else {
+                Issue.record("Expected failed error"); return
+            }
+            #expect(!message.isEmpty)
+        }
+        #expect(try await MarkdownAgentSource.grok(home: f.home).load().usesClaudeAgents == false)
+    }
+
     @Test func claudeListsSortedAgentsAndSkipsDocs() async throws {
         let f = AgentTestFolder(); defer { f.clean() }
         for (path, name) in [("zeta.md", "zeta"), ("Alpha.md", "alpha"), ("sub/beta.md", "beta")] {
