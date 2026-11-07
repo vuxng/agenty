@@ -33,3 +33,33 @@ extension UsageSnapshot {
         )
     }
 }
+
+struct PreviewAgentSource: AgentSource {
+    let provider: ProviderID
+    let result: Result<AgentListing, AgentLoadError>
+
+    var directory: AgentDirectory {
+        let home = URL(fileURLWithPath: "/tmp/agenty-agents-preview", isDirectory: true)
+        return AgentDirectory(url: home.appendingPathComponent(".\(provider.rawValue)/agents"),
+                              home: home, fileExtension: provider == .codex ? "toml" : "md",
+                              recursive: provider != .grok)
+    }
+
+    func load() async throws(AgentLoadError) -> AgentListing {
+        try result.get()
+    }
+
+    static let claudeListing = AgentListing(folderExists: true, agents: [
+        agent("code-reviewer", description: "Reviews changes for correctness and clarity.", model: "sonnet"),
+        agent("debugger", description: "Finds the cause of failing tests and unexpected behavior.", model: "opus"),
+        agent("docs-writer", description: "Writes clear documentation and examples.", model: nil),
+        agent("planner", description: "Breaks down work into small implementation steps.", model: "inherit"),
+        agent("researcher", description: "Checks sources and summarizes findings.", model: "haiku"),
+        agent("test-runner", description: nil, model: nil),
+    ])
+
+    private static func agent(_ name: String, description: String?, model: String?) -> AgentDefinition {
+        AgentDefinition(url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/\(name).md"),
+                        name: name, description: description, model: model, fields: [], prompt: nil)
+    }
+}

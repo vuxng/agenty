@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppPage: String, CaseIterable, Identifiable {
-    case usage, instructions, config
+    case usage, instructions, agents, config
 
     var id: Self { self }
 
@@ -9,6 +9,7 @@ enum AppPage: String, CaseIterable, Identifiable {
         switch self {
         case .usage: "Usage"
         case .instructions: "Instructions"
+        case .agents: "Agents"
         case .config: "Config"
         }
     }

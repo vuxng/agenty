@@ -4,10 +4,11 @@ import UsageCore
 @MainActor
 struct ProviderSelector: View {
     @Binding var selection: ProviderID
+    var providers: [ProviderID] = ProviderID.configurable
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(ProviderID.configurable, id: \.self) { provider in
+            ForEach(providers, id: \.self) { provider in
                 let selected = selection == provider
                 Button { selection = provider } label: {
                     HStack(spacing: 8) {

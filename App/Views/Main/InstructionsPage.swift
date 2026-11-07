@@ -7,6 +7,7 @@ struct InstructionsPage: View {
     let model: AppModel
 
     @FocusState private var editorIsFocused: Bool
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Group {
@@ -27,26 +28,13 @@ struct InstructionsPage: View {
     private func manuscript(_ document: InstructionsDocument) -> some View {
         @Bindable var model = model
         return VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
+            PageHeader(title: document.file.fileName, path: document.file.displayPath,
+                       revealURL: document.file.url) {
                 ProviderSelector(selection: $model.selectedProvider)
-                Text(verbatim: document.file.fileName)
-                    .font(.system(size: 52, weight: .thin, design: .rounded))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            HStack(spacing: 8) {
-                Text(verbatim: document.file.displayPath)
-                    .font(.caption.monospaced())
-                Button("Show in Finder", systemImage: "folder") {
-                    Finder.show(document.file.url)
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.borderless)
-                .help("Show in Finder")
+            } trailing: {
                 Text(verbatim: "·")
                 Text("Applies to new sessions").font(.caption)
             }
-            .foregroundStyle(.secondary)
 
             if document.file.provider == .codex && document.isOverridden {
                 Label("Codex is using AGENTS.override.md, so it ignores this file.",
@@ -56,20 +44,9 @@ struct InstructionsPage: View {
             }
 
             if let loadError = document.loadError {
-                VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "doc.badge.ellipsis")
-                        .font(.title)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    if case .readFailed(let reason) = loadError {
-                        Text("Agenty can't read this file: \(reason)")
-                    } else {
-                        Text("This file isn't plain text, so Agenty can't edit it.")
-                    }
+                PageMessage(systemImage: "doc.badge.ellipsis", text: loadErrorText(loadError)) {
                     Button("Show in Finder") { Finder.show(document.file.url) }
                 }
-                .padding(.top, 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
                 editor(document)
             }
@@ -119,5 +96,13 @@ struct InstructionsPage: View {
 
     private func refresh() {
         model.instructions[model.selectedProvider]?.refresh()
+    }
+
+    private func loadErrorText(_ error: InstructionsError) -> String {
+        if case .readFailed(let reason) = error {
+            String(localized: "Agenty can't read this file: \(reason)", locale: locale)
+        } else {
+            String(localized: "This file isn't plain text, so Agenty can't edit it.", locale: locale)
+        }
     }
 }
