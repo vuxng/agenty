@@ -13,7 +13,7 @@ struct AgentsPage: View {
         Group {
             if let document = model.agents[model.selectedProvider] {
                 AgentsPageContent(document: document, selection: $model.selectedProvider,
-                                  onOpen: { openURL = $0 }, onChoosePath: {
+                                  openURL: $openURL, onChoosePath: {
                     guard let path = ExecutablePicker.choose() else { return }
                     UserDefaults.standard.set(path, forKey: SettingsKey.providerPath(.codex))
                     Task { await document.refresh() }
@@ -36,12 +36,30 @@ struct AgentsPage: View {
 private struct AgentsPageContent: View {
     let document: AgentsDocument
     @Binding var selection: ProviderID
-    let onOpen: (URL) -> Void
+    @Binding var openURL: URL?
     let onChoosePath: () -> Void
 
     @Environment(\.locale) private var locale
 
     var body: some View {
+        Group {
+            if let openURL, let agent = document.listing?.agents.first(where: { $0.url == openURL }) {
+                AgentDetail(agent: agent, provider: document.source.provider,
+                            path: directory.displayPath(of: agent.url), backTitle: title) {
+                    self.openURL = nil
+                }
+            } else {
+                list
+            }
+        }
+        .onChange(of: document.listing?.agents, initial: true) {
+            if let openURL, document.listing?.agents.contains(where: { $0.url == openURL }) != true {
+                self.openURL = nil
+            }
+        }
+    }
+
+    private var list: some View {
         VStack(alignment: .leading, spacing: 16) {
             PageHeader(title: title, path: directory.displayPath(of: directory.url),
                        revealURL: document.listing?.folderExists == true ? directory.url : nil) {
@@ -100,7 +118,7 @@ private struct AgentsPageContent: View {
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)], spacing: 16) {
                         ForEach(listing.agents) { agent in
-                            Button { onOpen(agent.url) } label: {
+                            Button { openURL = agent.url } label: {
                                 AgentCard(agent: agent)
                             }
                             .buttonStyle(.plain)
@@ -119,12 +137,13 @@ private struct AgentsPagePreview: View {
     let result: Result<AgentListing, AgentLoadError>
 
     @State private var document: AgentsDocument?
+    @State private var openURL: URL?
 
     var body: some View {
         Group {
             if let document {
                 AgentsPageContent(document: document, selection: .constant(provider),
-                                  onOpen: { _ in }, onChoosePath: {})
+                                  openURL: $openURL, onChoosePath: {})
             } else {
                 ProgressView()
             }

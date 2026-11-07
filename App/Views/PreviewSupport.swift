@@ -58,6 +58,52 @@ struct PreviewAgentSource: AgentSource {
         agent("test-runner", description: nil, model: nil),
     ])
 
+    static let hooksAgent = AgentDefinition(
+        url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/agenty.md"),
+        name: "agenty",
+        description: "Main chat for the agenty project. Use only when the user starts a session with `claude --agent agenty`.",
+        model: nil,
+        fields: [AgentField(key: "hooks", value: .block(#"""
+        SessionStart:
+          - hooks:
+              - type: command
+                command: jq -n --arg t agenty --rawfile c "$HOME/.claude/project-hq.md" '{hookSpecificOutput:{hookEventName:"SessionStart",sessionTitle:$t,additionalContext:$c}}'
+        """#))],
+        prompt: nil
+    )
+
+    static let promptAgent = AgentDefinition(
+        url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/code-reviewer.md"),
+        name: "code-reviewer", description: "Reviews changes for correctness and clarity.", model: "sonnet",
+        fields: [
+            AgentField(key: "tools", value: .text("Read, Grep, Glob")),
+            AgentField(key: "permissionMode", value: .text("plan")),
+            AgentField(key: "maxTurns", value: .text("12")),
+        ],
+        prompt: """
+        # Code reviewer
+        Review the changes and explain what needs attention.
+
+        ## Review checklist
+        - Check correctness and error handling.
+        - Keep feedback specific and actionable.
+
+        > Include file paths and line numbers for findings.
+        """
+    )
+
+    static let lineScannedAgent = AgentDefinition(
+        url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/hunter.md"),
+        name: "hunter", description: "Use when: things break", model: "inherit",
+        fields: [AgentField(key: "hooks", value: .block("Stop: []"))],
+        prompt: nil, isLineScanned: true
+    )
+
+    static let unreadableAgent = AgentDefinition.unreadable(
+        url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/unreadable.md"),
+        error: .notText
+    )
+
     private static func agent(_ name: String, description: String?, model: String?) -> AgentDefinition {
         AgentDefinition(url: URL(fileURLWithPath: "/tmp/agenty-agents-preview/.claude/agents/\(name).md"),
                         name: name, description: description, model: model, fields: [], prompt: nil)

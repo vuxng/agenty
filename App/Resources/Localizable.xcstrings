@@ -295,6 +295,22 @@
         }
       }
     },
+    "Back to agents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to agents"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quay lại danh sách agent"
+          }
+        }
+      }
+    },
     "Bars" : {
       "localizations" : {
         "vi" : {
@@ -845,6 +861,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hiển thị email tài khoản"
+          }
+        }
+      }
+    },
+    "This file isn't valid YAML, so Agenty read it line by line." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file isn't valid YAML, so Agenty read it line by line."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File này không phải YAML hợp lệ, nên Agenty đọc theo từng dòng."
           }
         }
       }
