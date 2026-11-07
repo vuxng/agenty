@@ -19,6 +19,17 @@ public final class JSONRPCClient: Sendable {
 
     /// Sends a request and returns the raw JSON of the response's `result`.
     public func call(_ method: String, params: JSONValue) async throws -> Data {
+        let (_, reply) = try await matchedReply(method, params: params)
+        return try JSONEncoder().encode(reply["result"] ?? .null)
+    }
+
+    /// Returns the result preserving the response's key order and number literals.
+    public func callOrdered(_ method: String, params: JSONValue) async throws -> OrderedJSON {
+        let (line, _) = try await matchedReply(method, params: params)
+        return try OrderedJSON(parsing: line).value(at: ["result"]) ?? .null
+    }
+
+    private func matchedReply(_ method: String, params: JSONValue) async throws -> (String, JSONValue) {
         let id = nextID.withLock { value -> Int in
             defer { value += 1 }
             return value
@@ -39,7 +50,7 @@ public final class JSONRPCClient: Sendable {
                     data: error["data"]
                 )
             }
-            return try JSONEncoder().encode(reply["result"] ?? .null)
+            return (line, reply)
         }
         throw JSONRPCError.closed
     }
