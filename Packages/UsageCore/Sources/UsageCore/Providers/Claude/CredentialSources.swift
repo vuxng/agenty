@@ -8,7 +8,10 @@ public protocol CredentialSource: Sendable {
 
 public enum CredentialSourceError: Error, Equatable {
     case accessDenied(OSStatus)
+    /// The read finished, but the data or exit status made no sense.
     case unreadable
+    /// The read never finished (timeout, cancellation, spawn failure, killed by a signal). Transient.
+    case unavailable
 }
 
 /// Remembers explicit denial or authentication failure for this session to avoid repeated prompts.
@@ -76,6 +79,7 @@ public struct KeychainCredentialSource: CredentialSource {
                 }
             }
         } catch ProcessRunnerError.unsuccessfulExit(let code) {
+            guard let code else { throw CredentialSourceError.unavailable }
             let status: OSStatus
             switch code {
             case 44: return nil
@@ -87,7 +91,8 @@ public struct KeychainCredentialSource: CredentialSource {
             if KeychainAccessGate.remembersDenial(status) { gate.markDenied() }
             throw CredentialSourceError.accessDenied(status)
         } catch {
-            throw CredentialSourceError.unreadable
+            // Timeout, cancellation or spawn failure: the Keychain may still hold a good credential.
+            throw CredentialSourceError.unavailable
         }
 
         let text = output.trimmingCharacters(in: .whitespacesAndNewlines)

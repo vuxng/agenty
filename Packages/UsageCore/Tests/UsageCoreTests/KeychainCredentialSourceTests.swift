@@ -71,27 +71,27 @@ import Testing
         }
     }
 
-    @Test func launchFailureIsUnreadable() async {
+    @Test func launchFailureIsUnavailable() async {
         let runner = FakeProcessRunner(channel: ScriptedChannel(lines: []))
         runner.launchError = CocoaError(.executableNotLoadable)
-        await #expect(throws: CredentialSourceError.unreadable) {
+        await #expect(throws: CredentialSourceError.unavailable) {
             try await KeychainCredentialSource(service: service, runner: runner).load()
         }
     }
 
-    @Test func signalTerminationIsUnreadable() async {
+    @Test func signalTerminationIsUnavailable() async {
         let runner = FakeProcessRunner(channel: ScriptedChannel(lines: []))
         runner.launchError = ProcessRunnerError.unsuccessfulExit(code: nil)
-        await #expect(throws: CredentialSourceError.unreadable) {
+        await #expect(throws: CredentialSourceError.unavailable) {
             try await KeychainCredentialSource(service: service, runner: runner).load()
         }
     }
 
-    @Test func timeoutIsUnreadable() async {
+    @Test func timeoutIsUnavailable() async {
         let channel = ScriptedChannel(lines: [])
         channel.hangsWhenEmpty = true
         let runner = FakeProcessRunner(channel: channel)
-        await #expect(throws: CredentialSourceError.unreadable) {
+        await #expect(throws: CredentialSourceError.unavailable) {
             try await KeychainCredentialSource(service: service, runner: runner, timeout: .milliseconds(20)).load()
         }
     }

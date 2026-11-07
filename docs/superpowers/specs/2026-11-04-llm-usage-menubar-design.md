@@ -171,6 +171,9 @@ luôn có trong partition list và danh sách app của item, nên không bị h
   - 128 (Deny) và 51 (sai mật khẩu): app nhớ là bị từ chối cho tới khi người dùng bấm Retry.
   - 36 (keychain khoá, không được hiện UI): báo lỗi Keychain nhưng không nhớ, nên lần refresh
     sau thử lại.
+- Nếu `security` chưa xong sau 60 giây, bị huỷ, hoặc không chạy được, và cũng không có file
+  credential còn hạn, thì app báo lỗi tạm thời (`.network`) rồi thử lại sau, chứ không báo
+  "chưa đăng nhập".
 
 **Request:**
 ```

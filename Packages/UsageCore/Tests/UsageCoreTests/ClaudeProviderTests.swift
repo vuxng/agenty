@@ -219,6 +219,31 @@ import Testing
         #expect(source.keychainCalls == 2)
     }
 
+    @Test func unavailableKeychainWithNoFileIsNetwork() async {
+        let p = provider([ThrowingCredentialSource(.unavailable), StaticCredentialSource(nil)], FakeHTTPClient(status: 200))
+        await #expect(throws: UsageError.network(retryAfter: nil)) { try await p.fetch() }
+    }
+
+    @Test func unavailableKeychainWithStaleFileIsNetwork() async {
+        let http = FakeHTTPClient(status: 200)
+        let p = provider([ThrowingCredentialSource(.unavailable), StaticCredentialSource(stale)], http)
+        await #expect(throws: UsageError.network(retryAfter: nil)) { try await p.fetch() }
+        #expect(http.requests.isEmpty)
+    }
+
+    @Test func unavailableKeychainFallsBackToFreshFile() async throws {
+        let http = try okHTTP()
+        let p = provider([ThrowingCredentialSource(.unavailable), StaticCredentialSource(fresh)], http)
+        _ = try await p.fetch()
+        #expect(http.requests[0].value(forHTTPHeaderField: "Authorization") == "Bearer fresh")
+    }
+
+    @Test func deniedWinsOverUnavailable() async {
+        let p = provider([ThrowingCredentialSource(.unavailable), ThrowingCredentialSource(.accessDenied(-128))],
+                         FakeHTTPClient(status: 200))
+        await #expect(throws: UsageError.keychainDenied) { try await p.fetch() }
+    }
+
     @Test func cancelledCredentialReadIsNetworkNotStaleToken() async {
         let p = provider([HangingCredentialSource(), StaticCredentialSource(stale)], FakeHTTPClient(status: 200))
         let task = Task { try await p.fetch() }
