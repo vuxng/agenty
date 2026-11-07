@@ -62,11 +62,13 @@ If Claude answers with a rate limit, Agenty says so in the popover and waits bef
 - Credentials are only read, never written or logged.
 - The update check reads `appcast.xml` from GitHub and sends no account data.
 
-## First run: Keychain prompt
+## Keychain access
 
-The first time Agenty reads Claude Code's credentials from the Keychain, macOS asks for permission. Choose **Always Allow** so it does not ask again.
+Agenty reads Claude Code's login from the Keychain item "Claude Code-credentials" by running `/usr/bin/security`, the same tool Claude Code uses to save it. macOS lets `security` read the item, so no permission dialog appears: not on first run, not after an update, and not after a build from source.
 
-"Always Allow" is remembered per app signature. Releases are all signed with the same Developer ID, so the permission carries over when you update. A build you make from source is ad-hoc signed, so macOS asks again after every rebuild. If you click **Deny**, the app stops asking and shows "Keychain access denied" in the popover until you press **Retry** or relaunch the app.
+Up to 0.5.0, Agenty read the item directly, and macOS asked again every few hours, because each Claude Code token refresh resets the item's access list. Update to 0.5.1 or later if you still see that dialog.
+
+If macOS does ask and you click **Deny**, the app stops asking and shows "Keychain access denied" until you press **Retry** or relaunch the app.
 
 If Claude Code keeps its login in `~/.claude/.credentials.json`, Agenty reads that file too.
 
