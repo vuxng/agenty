@@ -47,8 +47,8 @@ struct ProviderCard: View {
             if case .loading = summary.state, visibleError != nil {
                 ProgressView().controlSize(.mini)
             }
-            if let plan = summary.state.snapshot?.plan {
-                Text(plan.capitalized)
+            if let plan = summary.state.snapshot?.displayPlan {
+                Text(plan)
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)

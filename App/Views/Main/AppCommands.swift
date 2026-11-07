@@ -8,10 +8,17 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .saveItem) {
             Button("Save") {
-                model.instructions[model.selectedInstructions]?.save()
+                switch page {
+                case .instructions:
+                    model.instructions[model.selectedProvider]?.save()
+                case .config:
+                    model.requestConfigSave()
+                case .usage, .agents:
+                    break
+                }
             }
             .keyboardShortcut("s", modifiers: .command)
-            .disabled(page != .instructions || model.instructions[model.selectedInstructions]?.isDirty != true)
+            .disabled(!canSave)
         }
 
         CommandGroup(after: .toolbar) {
@@ -20,6 +27,14 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("r", modifiers: .command)
             .disabled(page != .usage)
+        }
+    }
+
+    private var canSave: Bool {
+        switch page {
+        case .instructions: model.instructions[model.selectedProvider]?.isDirty == true
+        case .config: model.configs[model.selectedProvider]?.isDirty == true
+        case .usage, .agents: false
         }
     }
 }

@@ -41,6 +41,7 @@ import Testing
         #expect(store.states[.claude] == .loaded(snap(.claude)))
         #expect(store.states[.codex] == .loaded(snap(.codex)))
         #expect(store.lastRefreshAt == clock.now())
+        #expect(store.states[.grok] == nil)
     }
 
     @Test func failureIsolatedPerProvider() async {
@@ -112,6 +113,28 @@ import Testing
         await store.refreshAll(force: true)
         #expect(await a.fetchCount == 2)
         #expect(await b.fetchCount == 1)
+    }
+
+    @Test func reenabledProviderFetchesInsideMinimumInterval() async {
+        let first = snap(.codex)
+        let second = snap(.codex, 20)
+        let stub = StubProvider(id: .codex, minimumInterval: .seconds(300),
+                                results: [.success(first), .success(second)])
+        let store = makeStore([stub])
+        await store.refreshAll()
+        #expect(await stub.fetchCount == 1)
+        #expect(store.states[.codex] == .loaded(first))
+
+        clock.advance(by: .seconds(60))
+        store.configuration.enabled.remove(.codex)
+        await store.refreshAll()
+        #expect(store.states[.codex] == .idle)
+        #expect(await stub.fetchCount == 1)
+
+        store.configuration.enabled.insert(.codex)
+        await store.refreshAll(force: true)
+        #expect(await stub.fetchCount == 2)
+        #expect(store.states[.codex] == .loaded(second))
     }
 
     @Test func forceSkipsRateLimitedProviderOnly() async {
@@ -196,6 +219,21 @@ import Testing
         #expect(!store.isStale(.claude))
         clock.advance(by: .seconds(2))
         #expect(store.isStale(.claude))
+    }
+
+    @Test func staleUsesProviderMinimumInterval() async {
+        var config = StoreConfiguration()
+        config.refreshInterval = .seconds(60)
+        let store = makeStore([
+            StubProvider(id: .codex, minimumInterval: .seconds(300), results: [.success(snap(.codex))]),
+        ], config: config)
+        await store.refreshAll()
+        clock.advance(by: .seconds(299))
+        #expect(!store.isStale(.codex))
+        clock.advance(by: .seconds(601))
+        #expect(!store.isStale(.codex))
+        clock.advance(by: .seconds(1))
+        #expect(store.isStale(.codex))
     }
 
     @Test func notifiesOnceAcrossStoreInstances() async {

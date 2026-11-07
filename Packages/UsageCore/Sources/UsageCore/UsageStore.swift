@@ -72,7 +72,8 @@ public final class UsageStore {
 
     public func isStale(_ id: ProviderID) -> Bool {
         guard let fetchedAt = states[id]?.snapshot?.fetchedAt else { return false }
-        return now().timeIntervalSince(fetchedAt) > 3 * configuration.refreshInterval.seconds
+        let interval = max(configuration.refreshInterval, providers[id]?.minimumInterval ?? .zero)
+        return now().timeIntervalSince(fetchedAt) > 3 * interval.seconds
     }
 
     public func refreshIfOlder(than age: Duration) async {
@@ -92,7 +93,9 @@ public final class UsageStore {
                 states[id] = .idle
                 continue
             }
-            if let ok = lastSuccessAt[id], ok.addingTimeInterval(provider.minimumInterval.seconds) > start { continue }
+            // A provider turned back on has nothing left to show, so it fetches even inside its interval.
+            if states[id]?.snapshot != nil, let ok = lastSuccessAt[id],
+               ok.addingTimeInterval(provider.minimumInterval.seconds) > start { continue }
             if let until = rateLimitedUntil[id], until > start { continue }
             if !force, let next = nextAttempt[id], next > start { continue }
             states[id] = .loading(last: states[id]?.snapshot)

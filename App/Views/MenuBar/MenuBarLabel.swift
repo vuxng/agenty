@@ -61,7 +61,8 @@ struct MenuBarPreviewGrid: View {
     private static func makeStores() async -> [PreviewEntry] {
         func ok(_ p: Double) -> [ProviderID: Result<UsageSnapshot, UsageError>] {
             [.claude: .success(.preview(.claude, percent: p)),
-             .codex: .success(.preview(.codex, percent: 30))]
+             .codex: .success(.preview(.codex, percent: 30)),
+             .grok: .success(.preview(.grok, percent: 7, plan: "SuperGrok Plus"))]
         }
         var error = ok(40)
         error[.codex] = .failure(.notLoggedIn)

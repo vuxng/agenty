@@ -7,15 +7,16 @@ struct InstructionsPage: View {
     let model: AppModel
 
     @FocusState private var editorIsFocused: Bool
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Group {
-            if let document = model.instructions[model.selectedInstructions] {
+            if let document = model.instructions[model.selectedProvider] {
                 manuscript(document)
             }
         }
         .onAppear { refresh() }
-        .onChange(of: model.selectedInstructions) {
+        .onChange(of: model.selectedProvider) {
             editorIsFocused = false
             refresh()
         }
@@ -25,27 +26,15 @@ struct InstructionsPage: View {
     }
 
     private func manuscript(_ document: InstructionsDocument) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
-                providerSelector
-                Text(verbatim: document.file.fileName)
-                    .font(.system(size: 52, weight: .thin, design: .rounded))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            HStack(spacing: 8) {
-                Text(verbatim: document.file.displayPath)
-                    .font(.caption.monospaced())
-                Button("Show in Finder", systemImage: "folder") {
-                    showInFinder(document.file.url)
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.borderless)
-                .help("Show in Finder")
+        @Bindable var model = model
+        return VStack(alignment: .leading, spacing: 16) {
+            PageHeader(title: document.file.fileName, path: document.file.displayPath,
+                       revealURL: document.file.url) {
+                ProviderSelector(selection: $model.selectedProvider)
+            } trailing: {
                 Text(verbatim: "·")
                 Text("Applies to new sessions").font(.caption)
             }
-            .foregroundStyle(.secondary)
 
             if document.file.provider == .codex && document.isOverridden {
                 Label("Codex is using AGENTS.override.md, so it ignores this file.",
@@ -55,20 +44,9 @@ struct InstructionsPage: View {
             }
 
             if let loadError = document.loadError {
-                VStack(alignment: .leading, spacing: 12) {
-                    Image(systemName: "doc.badge.ellipsis")
-                        .font(.title)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    if case .readFailed(let reason) = loadError {
-                        Text("Agenty can't read this file: \(reason)")
-                    } else {
-                        Text("This file isn't plain text, so Agenty can't edit it.")
-                    }
-                    Button("Show in Finder") { showInFinder(document.file.url) }
+                PageMessage(systemImage: "doc.badge.ellipsis", text: loadErrorText(loadError)) {
+                    Button("Show in Finder") { Finder.show(document.file.url) }
                 }
-                .padding(.top, 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
                 editor(document)
             }
@@ -85,33 +63,6 @@ struct InstructionsPage: View {
                     .padding(.bottom, 24)
             }
         }
-    }
-
-    private var providerSelector: some View {
-        HStack(spacing: 4) {
-            ForEach(ProviderID.allCases, id: \.self) { provider in
-                let selected = model.selectedInstructions == provider
-                Button { model.selectedInstructions = provider } label: {
-                    HStack(spacing: 8) {
-                        ProviderStyle.brandLogo(provider)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
-                        Text(verbatim: provider.displayName)
-                            .font(.callout.weight(selected ? .semibold : .regular))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(selected
-                                ? AnyShapeStyle(.fill.secondary) : AnyShapeStyle(.clear), in: .capsule)
-                    .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(4)
-        .glassEffect(.regular, in: .capsule)
     }
 
     private func editor(_ document: InstructionsDocument) -> some View {
@@ -144,19 +95,14 @@ struct InstructionsPage: View {
     }
 
     private func refresh() {
-        model.instructions[model.selectedInstructions]?.refresh()
+        model.instructions[model.selectedProvider]?.refresh()
     }
 
-    private func showInFinder(_ url: URL) {
-        let manager = FileManager.default
-        if manager.fileExists(atPath: url.path) {
-            NSWorkspace.shared.activateFileViewerSelecting([url])
+    private func loadErrorText(_ error: InstructionsError) -> String {
+        if case .readFailed(let reason) = error {
+            String(localized: "Agenty can't read this file: \(reason)", locale: locale)
         } else {
-            let parent = url.deletingLastPathComponent()
-            var isDirectory: ObjCBool = false
-            if manager.fileExists(atPath: parent.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                NSWorkspace.shared.open(parent)
-            }
+            String(localized: "This file isn't plain text, so Agenty can't edit it.", locale: locale)
         }
     }
 }

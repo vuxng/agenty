@@ -1,6 +1,6 @@
 # Spike §9.1 — Nguồn dữ liệu "Usage limit" của Grok
 
-> **Cập nhật 2026-11-04:** Grok đã bị gỡ khỏi app (nay là Agenty) vì không lấy được usage. Tài liệu này chỉ còn giá trị lưu trữ.
+> **Cập nhật 2026-11-07:** Grok đã bị gỡ khỏi app ngày 2026-11-04 vì không lấy được usage. Lần gọi trực tiếp ngày 2026-11-07 với `grok` 1.0.70 đã trả về dữ liệu thật (bản 1.0.77 trả về đúng cùng các field), và Grok đã trở lại dưới dạng provider chỉ hỗ trợ usage. Khi nội dung bên dưới mâu thuẫn với dữ liệu thật, dữ liệu thật được ưu tiên: chu kỳ là hàng tuần, không phải hàng tháng (`currentPeriod.type`, reset tại `currentPeriod.end`); response không có `monthlyLimit`, `includedUsed`, `totalUsed`, on-demand hay `history`. Phần còn lại được giữ nguyên để lưu trữ.
 
 - **Ngày:** 2026-11-04
 - **Phiên bản kiểm tra:** `grok` 1.0.46, sau đó tự cập nhật lên 1.0.70 trong lúc spike

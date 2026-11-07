@@ -10,7 +10,10 @@ final class AppModel {
     let notifier = UserNotifier()
     let updater = Updater()
     let instructions: [ProviderID: InstructionsDocument]
-    var selectedInstructions: ProviderID = .claude
+    let configs: [ProviderID: ConfigDocument]
+    let agents: [ProviderID: AgentsDocument]
+    var pendingRiskySave: ProviderID?
+    var selectedProvider: ProviderID = .claude
 
     @ObservationIgnored private let defaults = UserDefaults.standard
     @ObservationIgnored private let loop: RefreshLoop
@@ -23,12 +26,35 @@ final class AppModel {
         // Writing to a closed child pipe must fail with EPIPE, never kill the app with SIGPIPE.
         signal(SIGPIPE, SIG_IGN)
         let home = FileManager.default.homeDirectoryForCurrentUser
-        self.instructions = Dictionary(uniqueKeysWithValues: ProviderID.allCases.map { provider in
+        self.instructions = Dictionary(uniqueKeysWithValues: ProviderID.configurable.map { provider in
             (provider, InstructionsDocument(file: InstructionsFile(provider: provider, home: home)))
         })
         let runner = SubprocessRunner()
         let locator = CLILocator(home: home, shell: ZshLoginShellLookup(runner: runner))
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0"
+
+        self.configs = [
+            .claude: ConfigDocument(backend: ClaudeConfigBackend(home: home, locator: locator, runner: runner)),
+            .codex: ConfigDocument(backend: CodexConfigBackend(
+                locator: locator,
+                pathOverride: { UserDefaults.standard.string(forKey: SettingsKey.providerPath(.codex)) },
+                runner: runner,
+                clientVersion: version,
+                home: home
+            )),
+        ]
+
+        self.agents = [
+            .claude: AgentsDocument(source: MarkdownAgentSource.claude(home: home)),
+            .codex: AgentsDocument(source: CodexAgentSource(
+                locator: locator,
+                pathOverride: { UserDefaults.standard.string(forKey: SettingsKey.providerPath(.codex)) },
+                runner: runner,
+                clientVersion: version,
+                home: home
+            )),
+            .grok: AgentsDocument(source: MarkdownAgentSource.grok(home: home)),
+        ]
 
         let gate = KeychainAccessGate()
         let claude = ClaudeProvider(
@@ -44,19 +70,34 @@ final class AppModel {
             runner: runner,
             clientVersion: version
         )
+        let grok = GrokProvider(
+            locator: locator,
+            pathOverride: { UserDefaults.standard.string(forKey: SettingsKey.providerPath(.grok)) },
+            runner: runner
+        )
 
         AppDefaults.register(in: .standard)
         UNUserNotificationCenter.current().delegate = notifier
         self.locator = locator
         self.keychainGate = gate
         self.store = UsageStore(
-            providers: [claude, codex],
+            providers: [claude, codex, grok],
             configuration: AppDefaults.configuration(from: .standard),
             notifier: notifier
         )
         self.loop = RefreshLoop(store: store)
         self.lastPaths = currentPaths()
         start()
+    }
+
+    func requestConfigSave() {
+        guard let document = configs[selectedProvider] else { return }
+        if document.dangerousEdits.isEmpty {
+            pendingRiskySave = nil
+            Task { await document.save() }
+        } else {
+            pendingRiskySave = selectedProvider
+        }
     }
 
     func start() {

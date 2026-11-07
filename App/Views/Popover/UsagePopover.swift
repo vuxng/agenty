@@ -69,6 +69,7 @@ private let loadedResults: [ProviderID: Result<UsageSnapshot, UsageError>] = [
     .codex: .success(previewSnapshot(.codex, plan: "plus", windows: [win(.weekly, 18, hours: 200)],
                                      credits: Credits(balance: 61862.97, unlimited: false),
                                      email: "a.very.long.address.for.truncation@example.com")),
+    .grok: .success(previewSnapshot(.grok, plan: "SuperGrok Plus", windows: [win(.weekly, 7, hours: 120)])),
 ]
 
 #Preview("Loaded") { PreviewHost { await previewStore(loadedResults) } }
@@ -90,6 +91,7 @@ private let loadedResults: [ProviderID: Result<UsageSnapshot, UsageError>] = [
         await previewStore([
             .claude: .failure(.notLoggedIn),
             .codex: .failure(.cliNotFound),
+            .grok: .failure(.notLoggedIn),
         ])
     }
 }

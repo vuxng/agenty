@@ -1,4 +1,5 @@
 import SwiftUI
+import UsageCore
 
 struct MainWindow: View {
     let model: AppModel
@@ -12,11 +13,15 @@ struct MainWindow: View {
             case .usage: UsagePage(store: model.store, onRetryKeychain: model.retryKeychainAccess)
             case .instructions:
                 InstructionsPage(model: model)
+            case .agents:
+                AgentsPage(model: model)
+            case .config:
+                ConfigPage(model: model)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            AmbientField(page: page, selected: model.selectedInstructions)
+            AmbientField(page: page, selected: model.selectedProvider)
                 .ignoresSafeArea()
         }
         .frame(minWidth: 860, minHeight: 580)
@@ -60,8 +65,14 @@ struct MainWindow: View {
             }
         }
         .animation(reduceMotion ? nil : .smooth, value: page)
-        .animation(reduceMotion ? nil : .smooth, value: model.selectedInstructions)
+        .animation(reduceMotion ? nil : .smooth, value: model.selectedProvider)
         .onAppear { DockPolicy.windowDidAppear() }
         .onDisappear { DockPolicy.windowDidDisappear() }
+        .onChange(of: page) {
+            if (page == .instructions || page == .config),
+               !ProviderID.configurable.contains(model.selectedProvider) {
+                model.selectedProvider = .claude
+            }
+        }
     }
 }

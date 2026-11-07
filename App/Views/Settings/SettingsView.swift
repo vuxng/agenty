@@ -55,7 +55,7 @@ private struct PreviewShellLookup: LoginShellLookup {
 
 #Preview {
     SettingsPanes(
-        providers: [.claude, .codex],
+        providers: [.claude, .codex, .grok],
         locator: CLILocator(home: URL(filePath: NSHomeDirectory()), shell: PreviewShellLookup())
     )
 }

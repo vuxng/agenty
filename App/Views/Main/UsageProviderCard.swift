@@ -73,8 +73,8 @@ struct UsageProviderCard: View {
             if case .loading = summary.state, summary.displayError != nil {
                 ProgressView().controlSize(.mini)
             }
-            if let plan = summary.state.snapshot?.plan {
-                Text(plan.capitalized)
+            if let plan = summary.state.snapshot?.displayPlan {
+                Text(plan)
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -160,6 +160,7 @@ private struct UsageHero: View {
                 Text(verbatim: String(Int(window.usedPercent.rounded())))
                     .font(.system(size: 112, weight: .thin, design: .rounded))
                     .monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.5)
                 Text(verbatim: "%").font(.largeTitle.weight(.thin)).fontDesign(.rounded)
             }
             .foregroundStyle(level.color ?? .primary)

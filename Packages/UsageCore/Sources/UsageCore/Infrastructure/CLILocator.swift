@@ -82,6 +82,7 @@ public actor CLILocator {
     private func resolve(_ name: String) async -> URL? {
         let directories = [
             home.path + "/.local/bin",
+            home.path + "/.grok/bin",
             "/opt/homebrew/bin",
             "/usr/local/bin",
         ]
