@@ -15,7 +15,7 @@ import Testing
     }
 
     @Test func checkedRunRejectsNonzeroExitAfterOutput() async throws {
-        await #expect(throws: ProcessRunnerError.unsuccessfulExit) {
+        await #expect(throws: ProcessRunnerError.unsuccessfulExit(code: 3)) {
             try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
                 arguments: ["-c", "echo ok; exit 3"], environment: [:], requireSuccessfulExit: true) { channel in
                     try await channel.finishInput()
@@ -23,6 +23,16 @@ import Testing
                     while let line = try await channel.receive() { lines.append(line) }
                     #expect(lines == ["ok"])
                     return lines
+                }
+        }
+    }
+
+    @Test func signalTerminationHasNoExitCode() async {
+        await #expect(throws: ProcessRunnerError.unsuccessfulExit(code: nil)) {
+            try await SubprocessRunner().run(executable: URL(filePath: "/bin/sh"),
+                arguments: ["-c", "kill -TERM $$"], environment: [:], requireSuccessfulExit: true) { channel in
+                    try await channel.finishInput()
+                    while try await channel.receive() != nil {}
                 }
         }
     }

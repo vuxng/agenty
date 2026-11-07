@@ -59,7 +59,7 @@ final class AppModel {
         let gate = KeychainAccessGate()
         let claude = ClaudeProvider(
             sources: [
-                KeychainCredentialSource(gate: gate),
+                KeychainCredentialSource(gate: gate, runner: runner),
                 FileCredentialSource(url: home.appending(path: ".claude/.credentials.json")),
             ],
             http: URLSessionHTTPClient()
