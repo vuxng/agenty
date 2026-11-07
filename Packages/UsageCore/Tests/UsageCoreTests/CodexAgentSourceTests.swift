@@ -65,7 +65,8 @@ import Testing
         #expect(channel.inputFinished)
     }
 
-    @Test func oneBadFileDoesNotStopTheOthers() async throws {
+    @Test(arguments: [false, true])
+    func oneBadFileDoesNotStopTheOthers(resolvedBarePath: Bool) async throws {
         defer { try? FileManager.default.removeItem(at: home) }
         let bad = try write("bad.toml", "name = \"bad\"\ndescription = \"unterminated\n")
         let good = try write("good.toml", "name = \"good\"\n")
@@ -78,7 +79,8 @@ import Testing
             if id == 2 {
                 let path = reference.withLock { $0?.environment["CODEX_HOME"] } ?? "missing"
                 let resolved = URL(filePath: path).resolvingSymlinksInPath().path
-                let message = "failed to read configuration layers: \(path)/config.toml:2:28: invalid basic string; \(resolved)/config.toml:2:28; \(path)/other; \(resolved)/other"
+                let barePath = resolvedBarePath ? resolved : path
+                let message = "failed to read configuration layers: \(path)/config.toml:2:28: invalid basic string; \(resolved)/config.toml:2:28; \(path)/other; \(resolved)/other; NSFilePath=\(barePath)"
                 let encoded = String(decoding: try! JSONEncoder().encode(message), as: UTF8.self)
                 return [#"{"id":2,"error":{"code":-32603,"message":\#(encoded)}}"#]
             }
@@ -91,7 +93,7 @@ import Testing
         guard case .failed(let message) = listing.agents.first?.readError else {
             Issue.record("Expected failed read"); return
         }
-        #expect(message.contains("bad.toml:2:28"))
+        #expect(message == "failed to read configuration layers: bad.toml:2:28: invalid basic string; bad.toml:2:28; other; other; NSFilePath=temporary folder")
         let path = try #require(runner.environment["CODEX_HOME"])
         #expect(!message.contains(path))
         #expect(!message.contains(URL(filePath: path).resolvingSymlinksInPath().path))

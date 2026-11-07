@@ -129,6 +129,7 @@ public struct CodexAgentSource: AgentSource {
             }
         }
         for path in paths { message = message.replacingOccurrences(of: path + "/", with: "") }
+        for path in paths { message = message.replacingOccurrences(of: path, with: "temporary folder") }
         return message
     }
 }
